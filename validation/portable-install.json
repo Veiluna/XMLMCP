@@ -1,0 +1,121 @@
+{
+  "version": "0.1.1",
+  "recorded_at": "2026-10-12T14:18:03.919361+00:00",
+  "unit_tests": {
+    "passed": 46,
+    "failed": 0,
+    "report": "validation/portable-unit-tests.xml"
+  },
+  "windows": {
+    "fresh_installation": "passed",
+    "unicode_and_spaces_directory": true,
+    "base_python": "3.14.7 (tags/v3.14.7:823f032, Aug  5 2026, 10:51:32) [MSC v.1944 64 bit (AMD64)]",
+    "source_archive_sha256": "a1b9aa8395de4e9363a66b782812b5bd95fd75f25ef9d3da2d84ef1f0009f920",
+    "runtime_and_installer_match_release_source": true,
+    "effective_windows_pins_equal_after_intel_mac_fix": true,
+    "locked_packages_verified": 36,
+    "stdio_from_different_working_directory": {
+      "version": "0.1.1",
+      "runtime": {
+        "platform": "win32",
+        "core_xml_available": true,
+        "calculation_available": true,
+        "image_mutation_available": true,
+        "calculation_backend": "windows_excel",
+        "limitation": null
+      },
+      "checks": [
+        {
+          "protocol": "2025-11-25",
+          "three_tools_passed": true,
+          "changed_parts": [
+            "xl/worksheets/sheet1.xml"
+          ],
+          "integrity": true
+        },
+        {
+          "protocol": "2026-07-28",
+          "three_tools_passed": true,
+          "changed_parts": [
+            "xl/worksheets/sheet1.xml"
+          ],
+          "integrity": true
+        }
+      ],
+      "core_smoke": "passed"
+    },
+    "workspace_setup": "passed",
+    "powershell_check_only": "passed"
+  },
+  "mac": [
+    {
+      "architecture": "arm64",
+      "python": "3.12",
+      "packages": 35,
+      "active_dependency_constraints_checked": 52,
+      "pywin32_excluded": true,
+      "cryptography": "50.0.2",
+      "marker_constraints": "passed",
+      "platform_tag": "macosx_11_0_arm64",
+      "wheel_availability": "passed",
+      "pip_report": "validation/mac-arm64-deps.json",
+      "real_mac_installation": "not_run"
+    },
+    {
+      "architecture": "x86_64",
+      "python": "3.12",
+      "packages": 35,
+      "active_dependency_constraints_checked": 52,
+      "pywin32_excluded": true,
+      "cryptography": "48.0.1",
+      "marker_constraints": "passed",
+      "platform_tag": "macosx_12_0_x86_64",
+      "wheel_availability": "passed",
+      "pip_report": "validation/mac-x86_64-deps.json",
+      "real_mac_installation": "not_run"
+    }
+  ],
+  "limitations": [
+    "Mac real hardware / APFS not tested",
+    "Doubao native UI connection not tested",
+    "Real anonymized original business template not supplied",
+    "Interactive Excel/WPS repair prompts not manually inspected"
+  ],
+  "runtime_and_installer_sha256": {
+    "src/xmlmcp/calculation.py": "bbb28f9c963e305f1033f9c899a09479704b7b4b1b06d676e95be7ef2bba1c94",
+    "src/xmlmcp/cells.py": "fae0226d09d1a5aa7fe36e06f5c5e1f914c97034c22eddb3afb466813935d947",
+    "src/xmlmcp/engine.py": "3a880810d5df9c051c66914f28960ddd383a2130542958ea3c98f26810ca2d12",
+    "src/xmlmcp/errors.py": "9977d5303a1ef515c6ee0791ee2e643a10ad58ac1f7a2b672ee4177835bd732d",
+    "src/xmlmcp/excel_worker.py": "393701ee5dd7e58942822ac36fd824b0d769fd7ce15a40b7be195e63833c85d7",
+    "src/xmlmcp/images.py": "7fd8a1b2b6b1900f753dac0f9d58f0c5274760cef96ca9687bd1481ef8311d4c",
+    "src/xmlmcp/integrity.py": "9655e8106949169196d029d7fd20aae4a32e4ed0f296c2a58e403e0ac6ec6119",
+    "src/xmlmcp/models.py": "87249057e40e1a984a178210ef47a91c298811b8f72217c7b966bd460fbff236",
+    "src/xmlmcp/namespaces.py": "14bf20556e56658b09d40191ba4f324d902275a4da52838be9207c5af0874c35",
+    "src/xmlmcp/package.py": "089cb5290218791baabe1f34dfd8d3d1fe3574efa0d54f64cf7dce65ae51059b",
+    "src/xmlmcp/runtime.py": "51a66bb1af314792eb5ea9ed33888441be05ae0e21eb049652241b52acef5f12",
+    "src/xmlmcp/server.py": "411c6613f4cbbcfffe0a5d9baac391ab4ebf86badc055c1c6d4fbd91fc2a00ce",
+    "src/xmlmcp/strings.py": "f9f8135432d99de51d0df4cd4ca5ab10b86a666b54cbde8c3538c4af2a9d43c2",
+    "src/xmlmcp/workbook.py": "da351f2231e99acbdfd4c6a7aea36f2e5af8357400cd3a0a21c4c45b8a340c9a",
+    "src/xmlmcp/xmlbytes.py": "2346bde35623eeb6b6d60b0f3c32cf266f3bed091de9fe65678cc5ca6410e97e",
+    "src/xmlmcp/__init__.py": "0ef1c1702151139ef30e7a4672cf5f6ef4e20b8b0e78cfed45052977ecbada60",
+    "src/xmlmcp/__main__.py": "4aadccce4fa3577abf242d78f21fc700bdfb26904098b40f20e949c1786a9049",
+    "scripts/build_portable.py": "be96470d9fef0ccb79ae724eaf4dca2ac4ae1f750f5930e4a72ca6a35ac27228",
+    "scripts/check_install.py": "257d42fa62669bcf23535c9976fc1168edd448ff53476d6b3aaae3b54ca74107",
+    "scripts/collect_validation.py": "7cd72bbac8a9fa155553924a1dc916f57f012645d0db28bef97c4421bdab7fdf",
+    "scripts/create_core_example.py": "b946ec15e69ecc7927aa58377fb5f6289cd822a58020e795230d83d90dbe46c7",
+    "scripts/create_example.py": "6975217ddd3f0a2bc31784ddd902b62d179e6db8a06c09af9a0e27a05c3bf35d",
+    "scripts/office_regression.py": "99dd3645e9bd553cbeeb3abe54a48a1d744c95a3ebca68619b4e1fd29c70739f",
+    "scripts/office_smoke.py": "2dc92157cc66307a45e17fdf5270055ed3e86b2673be7d9fcb09543b3158162e",
+    "scripts/protocol_smoke.py": "6a446172e4967a45930a169b004fbc496312be3a796e54d8352cffd5b73d5317",
+    "scripts/setup.ps1": "8bca7958b38a8a02c2f7ae826e837b0ff009e9a924b200254292bc86feab3834",
+    "scripts/setup.py": "def9d2e3959358fe3b3d080b38564a63729a3dfbc9826cf18b320859d81b9072",
+    "scripts/setup.sh": "7485fbd7f3674ff8e7aaf9ac40a5c10d0b8f202cf5ab1922f7bfca7706ec6af0"
+  },
+  "local_log_sha256": {
+    "windows-install.log": "22def9d93f40959ecdd9d96f67d103abba2532a568d41b00ed00f38ee062dc71",
+    "workspace-setup.log": "936ec5d27cf54b262a9a191927208c6472125b882c82f4169c67adda71701986",
+    "powershell-check.log": "5063134cf46619385951ec78b4009102eaf8abbd56321e50dd44672338ab0645",
+    "mac-arm64-deps.log": "f28a5da593f4ff50e5f2b89cf1521acfa2ee1bc31d2579f4d40a1e1e28892832",
+    "mac-x86_64-deps.log": "45b563f1ef408a604b473bb34e5774f39b3ba09f3ebdb02b885c96f997ae0c6c"
+  }
+}

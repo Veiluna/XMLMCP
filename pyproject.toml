@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xmlmcp"
+version = "0.1.1"
+description = "Byte-preserving XLSX template injection over local MCP stdio"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "mcp==2.2.0",
+  "pydantic==2.13.5",
+  "Pillow==12.3.0",
+  "pywin32==312; sys_platform == 'win32'",
+]
+
+[project.scripts]
+xmlmcp = "xmlmcp.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["office: requires installed Microsoft Excel or WPS"]
+

@@ -1,0 +1,5 @@
+[
+  {"op": "write", "target": {"name": "Title", "scope": "workbook"}, "value": "XMLMCP core example"},
+  {"op": "write", "target": {"name": "Tiny", "scope": "workbook"}, "value": "Small English preserved"},
+  {"op": "write", "target": {"name": "Grid", "scope": "workbook"}, "value": [["甲", 100], ["乙", 200]]}
+]

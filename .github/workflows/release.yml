@@ -1,0 +1,43 @@
+name: Test and publish portable release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: xmlmcp-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Confirm Python and install from the lock
+        run: |
+          python3 --version
+          python3 scripts/setup.py
+      - name: Run regression tests
+        run: .venv/bin/python -m pytest -q --basetemp=test-artifacts/github-unit --junitxml=validation/portable-unit-tests.xml
+      - name: Build the portable package
+        run: .venv/bin/python scripts/build_portable.py
+      - name: Publish v0.1.1 with verified assets
+        run: |
+          if gh release view v0.1.1 >/dev/null 2>&1; then
+            echo "v0.1.1 already exists; preserving the published assets."
+            exit 0
+          fi
+          gh release create v0.1.1 \
+            --target "$GITHUB_SHA" \
+            --title "XMLMCP v0.1.1 - Windows / Mac portable installation" \
+            --notes-file docs/release-v0.1.1.md \
+            --draft \
+            "dist/XMLMCP-0.1.1-portable.zip" \
+            "dist/XMLMCP-0.1.1-portable.zip.sha256"
+          gh release edit v0.1.1 --draft=false --latest

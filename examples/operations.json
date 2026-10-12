@@ -1,0 +1,48 @@
+[
+  {
+    "op": "write",
+    "target": {
+      "name": "Title",
+      "scope": "workbook"
+    },
+    "value": "New title"
+  },
+  {
+    "op": "write",
+    "target": {
+      "name": "Tiny",
+      "scope": "workbook"
+    },
+    "value": "Small English preserved"
+  },
+  {
+    "op": "write",
+    "target": {
+      "name": "Grid",
+      "scope": "workbook"
+    },
+    "value": [
+      [
+        "甲",
+        100
+      ],
+      [
+        "乙",
+        200
+      ]
+    ]
+  },
+  {
+    "op": "add_image",
+    "target": {
+      "name": "Photo",
+      "scope": "workbook"
+    },
+    "image_path": "examples/photo.png"
+  },
+  {
+    "op": "replace_image",
+    "image_id": "报告|xl/drawings/drawing1.xml|4",
+    "image_path": "examples/photo.png"
+  }
+]
