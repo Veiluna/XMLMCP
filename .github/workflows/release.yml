@@ -24,7 +24,7 @@ jobs:
           python3 --version
           python3 scripts/setup.py
       - name: Run regression tests
-        run: .venv/bin/python -m pytest -q --basetemp=test-artifacts/github-unit --junitxml=validation/portable-unit-tests.xml
+        run: .venv/bin/python -m pytest -q --basetemp=.tmp/github-unit --junitxml=validation/portable-unit-tests.xml
       - name: Build the portable package
         run: .venv/bin/python scripts/build_portable.py
       - name: Publish v0.1.1 with verified assets
@@ -41,3 +41,4 @@ jobs:
             "dist/XMLMCP-0.1.1-portable.zip" \
             "dist/XMLMCP-0.1.1-portable.zip.sha256"
           gh release edit v0.1.1 --draft=false --latest
+

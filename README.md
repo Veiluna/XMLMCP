@@ -93,7 +93,7 @@ Mac 首版支持检查及无需重算的 XML 修改。当前以工作簿为计�
 当前结果见 [VALIDATION.md](VALIDATION.md)。0.1.0 的 35 个自动测试及原始 Office 记录保存在本工作区 validation/acceptance.json；0.1.1 的跨平台安装与回归证据另存 validation/portable-install.json。官方客户端通过 2025-11-25 和 2026-07-28 两个协议路径实际调用三个工具。原生 Office 构造模板的普通、动态名称、透视和外部快照图表通过 Excel/WPS 首次打开的数据与对象检查，图表导出图片已核验。
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -q --basetemp=test-artifacts\unit-portable --junitxml=validation\portable-unit-tests.xml
+.\.venv\Scripts\python.exe -m pytest -q --basetemp=.tmp\unit-portable --junitxml=validation\portable-unit-tests.xml
 .\.venv\Scripts\python.exe scripts\check_install.py
 .\.venv\Scripts\python.exe scripts\protocol_smoke.py examples\template.xlsx --apply
 .\.venv\Scripts\python.exe scripts\office_smoke.py --kind all --wps
@@ -102,3 +102,4 @@ Mac 首版支持检查及无需重算的 XML 修改。当前以工作簿为计�
 Mac 用 `.venv/bin/python` 运行 pytest 或 check_install.py；Office 脚本仅供 Windows 使用。各次 Office 验收会建立独立目录，并只关闭本次创建的实例。Mac 真机、客户端人工提示检查与真实业务原模板验收尚待完成。当前工具无法控制豆包工作的原生设置界面，真实豆包连接尚未代替 SDK 验收，需要在其界面导入本机配置后确认三个工具可见。
 
 文档依据：[飞书 MCP 使用](https://aily.feishu.cn/hc/1u7kleqg/73ahi33a)、[官方 SDK](https://github.com/modelcontextprotocol/python-sdk)、[MCP 开发文档](https://modelcontextprotocol.io/docs/2026-07-28/develop/build-server)。字符串转义依据 [Microsoft ST_Xstring 说明](https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oe376/bd0aa042-434a-4ca7-b25f-4e1fd25a954d)。实现结构见 [docs/architecture.md](docs/architecture.md)。
+
