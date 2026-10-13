@@ -1,0 +1,59 @@
+{
+  "version": "0.2.2",
+  "recorded_at": "2026-10-13T04:21:44.638151+00:00",
+  "unit_tests": {
+    "passed": 82,
+    "failed": 0,
+    "report": "validation/portable-unit-tests.xml"
+  },
+  "mother_preparation": {
+    "integrity": "passed",
+    "native_result_tables": 2,
+    "reference_plot_frames": 6,
+    "source_not_overwritten": true,
+    "style_authoring": "explicit preparation only"
+  },
+  "user_report": {
+    "integrity": "passed",
+    "unchanged_parts": 32,
+    "changed_parts": 5,
+    "new_media_parts": 6,
+    "removed_old_media_parts": 6,
+    "style_checks": {
+      "patch_replay_valid": true,
+      "outside_patches_identical": true,
+      "destination_styles_identical": true,
+      "rich_text_styles_identical": true,
+      "style_parts_identical": true,
+      "layout_styles_identical": true,
+      "original_cells_checked": 1917,
+      "xml_valid": true,
+      "relationships_valid": true,
+      "content_types_valid": true,
+      "relationship_count": 40,
+      "cache_structure_valid": true,
+      "formula_count": 0,
+      "chart_cache_count": 0,
+      "pivot_cache_count": 0,
+      "relationship_ids_valid": true
+    },
+    "new_plots": 6,
+    "original_example_graphs_retained": 0,
+    "original_comments": 31,
+    "checkboxes": 12,
+    "missing_field_count": 4,
+    "wps_windows": {
+      "version": "12.0",
+      "readonly": true,
+      "first_open_values_passed": true,
+      "charts": 0,
+      "new_images": 6,
+      "checkboxes": 12
+    },
+    "wps_result_pages_visually_checked": 2,
+    "mac_wps_display": "not_run",
+    "human_repair_dialog_check": "not_run",
+    "png_style": "reference appearance reconstruction"
+  },
+  "private_business_inputs_and_outputs": "not included in the release"
+}

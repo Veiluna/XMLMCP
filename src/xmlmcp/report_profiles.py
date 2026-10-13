@@ -93,15 +93,26 @@ def known_report_profile(template, order_layout) -> ReportProfile | None:
     row_order = ["sample_number", "sample_name", "material", "thickness_um", "areal_density", "foil_thickness_um", "foil_areal_density"]
     samples = {key: area(grid.top + i, 2, grid.top + i, 9) for i, key in enumerate(row_order)}
     model = template.value(cells.get(cell_address(grid.bottom + 3, 1)))
-    return ReportProfile(profile_id="electrode-marked-template-v1", template_fingerprint=template.package.fingerprint,
+    profile = ReportProfile(profile_id="electrode-marked-template-v1", template_fingerprint=template.package.fingerprint,
                          order=order_layout, fields=fields, sample_rows=samples,
-                         tables={"single_summary": TableSlot(target=area(single.top + 22, 1, single.top + 28, 8), header_style=at(grid.top), data_style=at(grid.top + 3, 2)),
-                                 "pressure_resistivity": TableSlot(target=area(pressure.top + 20, 1, pressure.bottom, 6), header_style=at(grid.top), data_style=at(grid.top + 3, 2))},
+                         tables={"single_summary": TableSlot(target=area(single.top + 22, 1, single.top + 28, 8)),
+                                 "pressure_resistivity": TableSlot(target=area(pressure.top + 20, 1, pressure.bottom, 6))},
                          figures={"single_point": area(single.top + 2, 1, single.top + 20, 11), "pressure": area(pressure.top + 2, 1, pressure.top + 17, 11)},
                          checkboxes=[CheckboxBinding(source_label=l, target_label=l, target_sheet=sheet["name"]) for l in
                                      ("包装完好", "全部退回", "无需退回&报损", "其他要求", "腐蚀性", "毒性", "健康危害", "无健康危害", "需要前处理", "易吸潮", "寄回", "无需寄回")],
                          text_runs=[TextRunBinding(field="test_parameters", target=at(grid.bottom + 3, 2), run_index=3, prefix="\n")],
                          defaults={"instrument_model": model} if model else {})
+    from .report_plots import REFERENCE_PLOTS
+    replacements = {i['name'].removeprefix('XMLMCP Reference '):i['image_id'] for i in template.images()
+                    if i['name'].startswith('XMLMCP Reference ')}
+    if set(replacements) == set(REFERENCE_PLOTS):
+        profile.profile_id = 'electrode-editable-template-v2'
+        profile.figures = {}
+        profile.figure_replacements = replacements
+        profile.figure_style = 'template-statistics'
+        profile.tables = {'single_measurements':TableSlot(target=area(single.top+32,1,single.top+45,11)),
+                          'pressure_measurements':TableSlot(target=area(pressure.top+17,1,pressure.top+30,11))}
+    return profile
 
 
 def load_profile(path: str) -> ReportProfile:

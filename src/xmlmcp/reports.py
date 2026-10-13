@@ -16,12 +16,13 @@ from .controls import checkboxes
 from .xmlbytes import digest
 from .offline import preflight_offline, image_geometry
 from .images import ImageChange
-from .models import AddImage
+from .models import AddImage, ReplaceImage
 from .engine import apply_changes, OPERATIONS
 from .cells import preflight_cells
-from .report_plots import make_plot
+from .report_plots import make_plot, plot_mode, REFERENCE_PLOTS
 from .publication import publish_bundle
 from .namespaces import S
+from .report_objects import drawing_objects, apply_example_removals
 
 
 def read_target(book, target, row=False):
@@ -59,8 +60,10 @@ def _prepare(template_path, order_path, raw_zip_path, profile_path=None, metadat
                 "模板与已确认映射的指纹不同，请重新检查和确认映射")
         require(set(profile.fields) <= set(FIELD_CATALOG) and set(profile.sample_rows) <= set(SAMPLE_CATALOG),
                 "REPORT_FIELD", "映射包含不支持的字段名称")
-        require(set(profile.figures) <= {"single_point", "pressure"} and set(profile.tables) <= {"single_summary", "pressure_resistivity"},
+        require(set(profile.figures) | set(profile.figure_replacements) <= {'single_point', 'pressure', *REFERENCE_PLOTS}
+                and set(profile.tables) <= {'single_summary', 'pressure_resistivity', 'single_measurements', 'pressure_measurements'},
                 "REPORT_SLOT", "映射包含不支持的图表或表格类型")
+        require(not set(profile.figures) & set(profile.figure_replacements), 'REPORT_SLOT', '同一图表不能同时新增和替换')
         require(set(profile.defaults) <= set(FIELD_CATALOG), "REPORT_FIELD", "默认值字段名称不支持")
         require(all(binding.field in FIELD_CATALOG for binding in profile.text_runs), "REPORT_FIELD", "富文本片段字段名称不支持")
     require(set(layout.fields) <= set(FIELD_CATALOG) and set(layout.sample_rows) <= set(SAMPLE_CATALOG), "ORDER_LAYOUT", "委托单映射字段名称不支持")
@@ -143,6 +146,7 @@ def inspect_report_inputs(template_path: str, order_path: str, raw_zip_path: str
                             statistics=stats, missing_fields=missing, warnings=warnings,
                             suggested_profile=profile.model_dump(mode="json", exclude_none=True) if profile else None,
                             mapping_status="profile_loaded" if profile_path else "known_template_suggestion" if profile else "mapping_required",
+                            available_objects=[{k: v for k, v in o.items() if not k.startswith('_')} for o in drawing_objects(template)],
                             available_targets=template.names, field_catalog=FIELD_CATALOG)
 
 
@@ -158,6 +162,9 @@ def _operations(template, profile, fields, samples, files, stats):
         ops.append({"op": "write", "target": target.model_dump(exclude_none=True), "value": [values]})
     summaries = {(s["sample"], s["kind"]): s for s in stats}
     for kind, slot in profile.tables.items():
+        if kind in ('single_measurements', 'pressure_measurements'):
+            ops.extend(_measurement_table(template, kind, slot, samples, files, summaries))
+            continue
         if kind == "single_summary":
             rows = [["样品", "点数", "平均压强", "平均厚度", "平均电阻", "电阻率均值", "样本标准差", "样本COV"],
                     ["", "", "MPa", "μm", "Ω", "Ω·cm", "Ω·cm", "%"]]
@@ -182,13 +189,45 @@ def _operations(template, profile, fields, samples, files, stats):
         padded = [r + [None] * (rect.size[1] - len(r)) for r in rows]
         padded += [[None] * rect.size[1] for _ in range(rect.size[0] - len(rows))]
         ops.append({"op": "write", "target": slot.target.model_dump(exclude_none=True), "value": padded})
-        for source, start, end in ((slot.header_style, rect.top, rect.top + 1), (slot.data_style, rect.top + 2, rect.bottom)):
-            if source and start <= end:
-                ops.append({"op": "copy_style", "source": source.model_dump(exclude_none=True),
-                            "target": {"sheet": sheet["name"], "range": Rectangle(start, rect.left, end, rect.right).address}})
     # Reject ambiguous overlap and rich-text/type issues before any plotting.
     preflight_cells(template, OPERATIONS.validate_python(ops))
     return ops
+
+
+def _measurement_table(template, kind, slot, samples, files, summaries):
+    sheet, rect = template.resolve(slot.target)
+    capacity = (rect.size[1] - 1) // 2
+    require(rect.size[1] == 1 + 2 * capacity and len(samples) <= capacity,
+            'REPORT_CAPACITY', '测量表必须预留编号列及两组样品列', table=kind)
+    single = kind == 'single_measurements'
+    mode = 'single_point' if single else 'pressure'
+    records = [files.get((s['sample_name'], mode)) for s in samples]
+    require(all(records), 'RAW_MODE_MISSING', '测量表所需原始记录缺失')
+    key = 'point' if single else 'nominal_pressure_mpa'
+    points = [r[key] for r in records[0]['records']]
+    require(all([r[key] for r in item['records']] == points for item in records),
+            'REPORT_PRESSURE_GRID', '测量表各样品的测量点或工步不一致，不能按行拼接')
+    data_rows = rect.size[0] - (4 if single else 2)
+    require(0 < len(points) <= data_rows, 'REPORT_CAPACITY', '逐点记录超出测量表预留行数', table=kind, records=len(points), capacity=data_rows)
+    headers = [s['sample_name'] for s in samples] + [None] * (capacity - len(samples))
+    rows = [['编号' if single else '设定压强（MPa）', *headers, *headers]]
+    metrics = ('resistivity_ohm_cm', 'thickness_um')
+    for i, point in enumerate(points):
+        rows.append([point, *[round(item['records'][i][metrics[0]], 4) for item in records], *[None] * (capacity - len(samples)),
+                     *[round(item['records'][i][metrics[1]], 2) for item in records], *[None] * (capacity - len(samples))])
+    rows += [[None] * rect.size[1] for _ in range(data_rows - len(points))]
+    if single:
+        for label, field in (('平均值', 'mean'), ('COV（%）', 'sample_cov_pct')):
+            values = [label]
+            for metric in metrics:
+                values += [round(summaries[(s['sample_name'], mode)][field][metric], 4)
+                           if summaries[(s['sample_name'], mode)][field][metric] is not None else None for s in samples]
+                values += [None] * (capacity - len(samples))
+            rows.append(values)
+    def target(address):return {'sheet':sheet['name'], 'range':address}
+    return [{'op':'write', 'target':target(cell_address(rect.top, rect.left + 1)), 'value':'电阻率（Ω·cm）'},
+            {'op':'write', 'target':target(cell_address(rect.top, rect.left + 1 + capacity)), 'value':'极片总厚度（μm）'},
+            {'op':'write', 'target':target(Rectangle(rect.top + 1, rect.left, rect.bottom, rect.right).address), 'value':rows}]
 
 
 def generate_report(template_path: str, order_path: str, raw_zip_path: str, output_directory: str,
@@ -201,6 +240,9 @@ def generate_report(template_path: str, order_path: str, raw_zip_path: str, outp
     require(profile_path or profile is not None, "REPORT_PROFILE", "必须指定已确认的 profile 或 profile_path")
     template, order, raw, profile, fields, samples, files, stats, missing, warnings = _prepare(template_path, order_path, raw_zip_path, profile_path, metadata, profile)
     require(profile is not None, "REPORT_PROFILE", "请先确认并保存模板映射")
+    # Preflight remaining objects after removing the reviewed examples. This in-memory
+    # package is discarded; the final output still starts from the original input.
+    apply_example_removals(template, profile.example_objects)
     preflight_offline(template)
     operations = _operations(template, profile, fields, samples, files, stats)
     text_runs = [{"target": binding.target.model_dump(exclude_none=True), "run_index": binding.run_index,
@@ -229,19 +271,30 @@ def generate_report(template_path: str, order_path: str, raw_zip_path: str, outp
         profile_file = absolute_file(profile_path, ".json")
         sources[str(profile_file)] = digest(profile_file.read_bytes())
     images = []
+    plot_records = []
     with tempfile.TemporaryDirectory(prefix=".xmlmcp-report-", dir=destination.parent) as temporary:
         bundle = Path(temporary) / "bundle"
         bundle.mkdir()
-        for kind, target in profile.figures.items():
-            require(all((s["sample_name"], kind) in files for s in samples), "RAW_MODE_MISSING", "图片所需模式缺失", kind=kind)
-            sheet, rect = template.resolve(target)
-            cells = template.cell_map(sheet)
-            require(not any(template.value(cells.get(a)) not in (None, "", " ") for a in rect.cells()),
-                    "REPORT_FIGURE_OVERLAP", "图片预留区包含文字或数据，不覆盖已有内容", kind=kind)
-            image = bundle / ("single-point.png" if kind == "single_point" else "pressure-curve.png")
-            op = AddImage(op="add_image", target=target, image_path=str(image))
-            dimensions = image_geometry(template, [ImageChange(op, b"", 1, 1, "png", sheet["name"], rect)], profile.maximum_digit_width_px)[f"{sheet['name']}!{rect.address}"]
-            make_plot(kind, samples, files, image, dimensions["width"] / dimensions["height"])
+        for kind in [*profile.figures, *profile.figure_replacements]:
+            require(all((s['sample_name'], plot_mode(kind)) in files for s in samples), 'RAW_MODE_MISSING', '图片所需模式缺失', kind=kind)
+            filename = {'single_point':'single-point.png', 'pressure':'pressure-curve.png'}.get(kind, kind.replace('_','-') + '.png')
+            image = bundle / filename
+            if kind in profile.figure_replacements:
+                op = ReplaceImage(op='replace_image', image_id=profile.figure_replacements[kind], image_path=str(image))
+                matches = [i for i in template.images() if i['image_id'] == op.image_id]
+                require(len(matches) == 1, 'REPORT_OBJECT_MAPPING', '待替换统计图不存在或不唯一')
+                change = ImageChange(op, b'', 1, 1, 'png', matches[0]['sheet'], image=matches[0])
+            else:
+                target = profile.figures[kind]
+                sheet, rect = template.resolve(target)
+                cells = template.cell_map(sheet)
+                require(not any(template.value(cells.get(a)) not in (None, '', ' ') for a in rect.cells()),
+                        'REPORT_FIGURE_OVERLAP', '图片预留区包含文字或数据，不覆盖已有内容', kind=kind)
+                op = AddImage(op='add_image', target=target, image_path=str(image))
+                change = ImageChange(op, b'', 1, 1, 'png', sheet['name'], rect)
+            dimensions = image_geometry(template, [change], profile.maximum_digit_width_px)[change.geometry_key]
+            record = make_plot(kind, samples, files, image, dimensions['width'] / dimensions['height'], profile.figure_style)
+            if record:plot_records.append(record)
             images.append(image.name)
             operations.append(op.model_dump(exclude_none=True))
         require(operations, "NO_OPERATIONS", "映射未配置任何输出内容")
@@ -250,9 +303,13 @@ def generate_report(template_path: str, order_path: str, raw_zip_path: str, outp
                       "profile_sha256": digest(profile.model_dump_json().encode("utf-8")),
                       "external_refresh": False, "office_required": False}
         applied = apply_changes(str(template.package.path), str(bundle / "report.xlsx"), operations,
-                                offline=True, digit_width=profile.maximum_digit_width_px, checkbox_values=selected, text_run_values=text_runs, provenance=provenance)
+                                offline=True, digit_width=profile.maximum_digit_width_px, checkbox_values=selected, text_run_values=text_runs,
+                                preserve_styles=True, example_objects=profile.example_objects,
+                                discard_replaced_media=bool(profile.figure_replacements), provenance=provenance)
         data_report = {"provenance": provenance, "fields": fields, "samples": samples, "statistics": stats, "raw_files": raw["files"],
                        "missing_fields": missing, "warnings": warnings, "checkbox_values": selected,
+                       "example_objects": [o.model_dump() for o in profile.example_objects],
+                       'plots': plot_records,
                        "computation": {"engine": "python", "office_required": False, "workbook_recalculated": False, "plots": "static PNG; regenerate to update"}}
         (bundle / "report-data.json").write_text(json.dumps(data_report, ensure_ascii=False, indent=2), encoding="utf-8")
         (bundle / "template-profile.json").write_text(profile.model_dump_json(indent=2), encoding="utf-8")

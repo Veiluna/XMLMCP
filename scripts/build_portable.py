@@ -16,12 +16,12 @@ def release_files(root: Path) -> list[Path]:
     # Explicit roots and suffixes keep private workbooks, local config and venvs out.
     files = [root / name for name in ROOT_FILES]
     files += [root / "examples" / name for name in EXAMPLES]
-    files += [root / "src/xmlmcp/fonts" / name for name in ("XMLMCPChartLabels.ttf", "OFL.txt", "README.md")]
+    files += [root / "src/xmlmcp/fonts" / name for name in ("XMLMCPChartLabels.ttf", "XMLMCPChartLabelsBold.ttf", "OFL.txt", "README.md")]
     for directory, suffixes in (("src/xmlmcp", {".py"}), ("scripts", {".py", ".ps1", ".sh"}),
                                 ("tests", {".py"}), ("docs", {".md"})):
         files += [p for p in (root / directory).rglob("*")
                   if p.is_file() and p.suffix in suffixes and "__pycache__" not in p.parts]
-    for name in ("portable-install.json", "portable-unit-tests.xml", "mac-arm64-deps.json", "mac-x86_64-deps.json", "report-v0.2.0.json"):
+    for name in ("portable-install.json", "portable-unit-tests.xml", "mac-arm64-deps.json", "mac-x86_64-deps.json", "report-v0.2.0.json", "report-v0.2.2.json"):
         path = root / "validation" / name
         if path.is_file():
             files.append(path)

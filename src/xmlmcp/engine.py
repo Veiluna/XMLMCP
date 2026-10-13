@@ -81,7 +81,8 @@ def _publish_noclobber(source: Path, destination: Path):
 
 
 def apply_changes(input_path: str, output_path: str, operations: list[Operation | dict], *, calculator=None,
-                  offline: bool = False, digit_width: float = 7, checkbox_values=None, text_run_values=None, provenance=None) -> ApplyResult:
+                  offline: bool = False, digit_width: float = 7, checkbox_values=None, text_run_values=None,
+                  preserve_styles: bool = False, example_objects=None, discard_replaced_media=False, provenance=None) -> ApplyResult:
     ops = OPERATIONS.validate_python(operations)
     require(ops, "NO_OPERATIONS", "操作列表不能为空")
     package = Package(input_path)
@@ -95,6 +96,10 @@ def apply_changes(input_path: str, output_path: str, operations: list[Operation 
     require(not output.exists() and not report_path.exists(), "OUTPUT_EXISTS", "输出或报告已存在，不会覆盖")
     require(output.parent.is_dir(), "OUTPUT_DIRECTORY", "输出目录必须已经存在")
     book = Workbook(package)
+    replacements = None
+    if example_objects:
+        from .report_objects import apply_example_removals
+        replacements = apply_example_removals(book, example_objects)
     changes = preflight_cells(book, ops)
     images = preflight_images(book, ops)
     # Include all known dependent cached objects because Excel recalculates at workbook scope.
@@ -127,7 +132,7 @@ def apply_changes(input_path: str, output_path: str, operations: list[Operation 
             if offline:
                 from .offline import image_geometry
                 geometry = image_geometry(book, images, digit_width)
-                apply_image_changes(book, images, geometry)
+                apply_image_changes(book, images, geometry, discard_replaced_media=discard_replaced_media)
                 calculation.update({"engine": "python_report_xml", "reason": "No workbook formulas or local chart/pivot dependencies; external reference snapshots retained", "geometry": geometry})
             elif calculate or images:
                 calculation, computed_package = (calculator or ExcelCalculator()).run(book, directory, calculate, images)
@@ -160,8 +165,13 @@ def apply_changes(input_path: str, output_path: str, operations: list[Operation 
                            "calculation": calculation})
             if provenance:
                 report["provenance"] = provenance
+            if replacements:
+                report['example_replacement'] = replacements
             original = Package(package.path)
             result = Package(staging)
+            if preserve_styles:
+                from .report_styles import verify_report_styles
+                report['style_preservation'] = verify_report_styles(original, result)
             integrity = verify_packages(original, result, report)
             require(integrity.valid, "INTEGRITY_FAILED", "输出未通过完整性验证", errors=integrity.errors)
             report["verification"] = integrity.model_dump()

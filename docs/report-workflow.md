@@ -2,6 +2,8 @@
 
 0.2.0 增加 `inspect_report_inputs` 与 `generate_report`。报告生成在 Python 中计算并画图，然后在原 XLSX 包中局部注入，不需要 Microsoft Excel 或 WPS 自动化。MacBook 只安装 WPS 即可查看结果。
 
+0.2.2 支持六种参考统计图、替换已有图框和清理明确选择的示例对象。报告只修改真实值和表头；不复制或重建单元格样式。原有图片、图表是否属于示例由首次确认的映射决定，检查工具返回 `available_objects` 和图片 ID 供选择。
+
 ## 第一次使用模板
 
 1. 把委托单 XLSX、报告母版 XLSX 和原始数据 ZIP 放在本机。
@@ -71,12 +73,63 @@ Windows 换成 `C:/Reports/...` 之类的实际绝对路径。缺失字段留空
 - `pressure_resistivity` 表为两行标题/单位，加每个设定压强工步一行，共“压强 + 样品数”列。各样品的工步必须一致，不插值或按文件顺序拼接。
 - `figures.single_point` 生成逐点电阻率散点图；`figures.pressure` 生成实测压强与电阻率曲线。图片为静态 PNG，保留比例、居中，不生成依赖 Office 重算的动态图表。
 - 图名和轴标题默认中文：单点图为“单点电阻率散点图 / 测量点序号 / 电阻率（Ω·cm）”，变压图为“变压电阻率曲线 / 实测压强（MPa） / 电阻率（Ω·cm）”。随包提供标题字体，无需在系统中另行安装；中文样品名优先使用 Windows 微软雅黑或 Mac 苹方/黑体。
-- `header_style` / `data_style` 可指定模板已有单格样式，不能新建任意样式。所有行列尺寸和其他区域保留。
+- `header_style` / `data_style` 仅保留旧配置读取兼容，在报告生成中不执行样式复制。每个目标单元格保留自己的原样式；应先在母版设置所有预留位置的样式。所有原行列尺寸保留。
 - `maximum_digit_width_px` 是模板字体的数字宽度标定，默认为 7px。图片定位使用原有行高与 OOXML 列宽公式；特殊字体需在首次查看时确认映射中的该值。
 - `text_runs` 可明确指定某个富文本 `run_index`，只替换该片段正文，保留所有 `rPr`；共享文字复制到目标单格的 inlineStr，不修改 sharedStrings。普通混合富文本整格覆盖仍拒绝。
 - `checkboxes` 可按来源/目标工作表的唯一标签复制现有复选框状态，同步 VML 与 ctrlProps；关联单元格、混合状态和不唯一的标签拒绝，不猜测样品安全状态。
 
 配置不同坐标、名称、样品列数、图表区域即可适配不同报告布局。首版只支持当前数据适配器和上述图/表类型；其他测试方法、复杂文档对象或新计算规则需增加适配器。
+
+## 按参考外观制作可填表格的新母版
+
+有些母版的图后表格是 EMF/WMF 图片，图中的背景、字体和边框不是 Excel 单元格样式。对这类母版，先单独制作一份可填表格的新母版，再确认它的映射。这个准备步骤会创建新表格样式；后续 `generate_report` 对新母版执行严格的样式保留检查。
+
+已标记极片母版的准备入口如下。`base.xlsx` 是结果区已清空、包含“单点结果区”和“变压结果区”命名区域的母版；`reference.xlsx` 保留完整六张统计示例 PNG。`new-mother` 必须不存在，父目录必须存在。
+
+```bash
+# Mac；Windows 改用 .venv\Scripts\python.exe
+.venv/bin/python -m xmlmcp prepare-report-template /abs/base.xlsx /abs/reference.xlsx /abs/new-mother
+```
+
+此准备器仅适配已标记极片母版的标准布局和六个已识别参考对象：单点区 52 行 × 11 列、变压区 35 行 × 11 列。输出 `template.xlsx`、`template.integrity.json`、`preparation.json`，保留输入。以 A74/A129 为结果区起点时，新原生表格分别位于 A106:K119、A146:K159，可容纳五个样品，单点十个测量位置和变压十二个工步。单点表保留绿色表头、黄色平均值行；变压表保留蓝色表头，固定字体、底色、边框、数值格式。未用测量位置留空，平均值和 COV 行不移动。不同布局需要另行配置或新增准备适配器。
+
+准备步骤清理标准布局附录中的示例图片/图表，保留原批注、控件、VML、商标等其他对象。六个参考图框按原位置复制到新母版；生成报告时替换为真实数据图片并清理独占的旧图片部件。新母版先运行 `inspect_report_inputs`；返回 `electrode-editable-template-v2` 映射建议，经确认保存后复用。
+
+## 替换示例图与六种统计图
+
+`figure_replacements` 的值是检查工具返回的 `image_id`；替换时保留原锚点、图框和对象属性，重置裁剪并适配比例。`example_objects` 精确列出额外要删除的图片或原生图表 `object_id` 和 `kind`。删除只适用于标准直接 drawing 对象；共享媒体只有最后一个引用移除后才清理。未知、分组或不唯一的对象报错。图表删除后仍有其他本地/动态依赖的模板会被离线预检拒绝。
+
+```json
+{
+  "figure_style": "template-statistics",
+  "figure_replacements": {
+    "single_resistivity": "报告|xl/drawings/drawing1.xml|21",
+    "pressure_thickness": "报告|xl/drawings/drawing1.xml|43"
+  },
+  "example_objects": [
+    {"object_id": "报告|xl/drawings/drawing1.xml|14", "kind": "chart"}
+  ],
+  "tables": {
+    "single_measurements": {"target": {"sheet": "报告", "range": "A106:K119"}},
+    "pressure_measurements": {"target": {"sheet": "报告", "range": "A146:K159"}}
+  }
+}
+```
+
+上述为完整映射中的片段，所有 ID 和位置必须取自当前模板，不能直接背诵示例。`figures` 在空白区域添加新图；同一图种不可同时添加和替换。
+
+| 图种 | 真实数据与样式 |
+| --- | --- |
+| `single_resistance` | 电阻均值（mΩ），红色圆点；样本 COV，绿色三角、右轴 |
+| `single_resistivity` | 电阻率均值（Ω·cm）及同指标样本 COV |
+| `single_conductivity` | 电导率均值（S/cm）及同指标样本 COV |
+| `single_thickness` | 极片总厚度均值（μm）及同指标样本 COV |
+| `pressure_resistivity` | 各样品实测压强（MPa）与电阻率，彩色圆点曲线 |
+| `pressure_thickness` | 各样品实测压强（MPa）与总厚度，彩色圆点曲线 |
+
+`template-statistics` 固定透明背景、深灰坐标轴、灰色虚线网格及参考点型、线型。横轴样品名来自委托单，单位和标题为中文；变压比较以真实工步为点，不插值。参考图只有两个样品时，新增样品沿映射固定调色板使用蓝、橙、紫等颜色。坐标范围随真实数据变化。PNG 参考图没有可编辑图表样式定义，这些外观由绘图参数重建；不承诺逐像素一致。图种参数、字体、曲线点和均值/COV 均记录在 `report-data.json` 的 `plots` 中。
+
+`single_measurements` / `pressure_measurements` 表宽应为“1 + 2 × 样品容量”，分别写入电阻率和总厚度两组真实样品表头。各样品点序号或工步需一致，容量不足或合并范围冲突取消整批；不插入行列或用其他单元格样式填补容量。
 
 ## 计算与来源
 
@@ -90,7 +143,9 @@ CSV 支持 UTF-8、GB18030 和能识别标题的 UTF-16；读取 ZIP 内文件�
 
 ## 输出与验证
 
-输出目录包含 `report.xlsx`、两张或已配置的 PNG、`report.integrity.json`、`report-data.json`、`template-profile.json`。来源 JSON 记录输入指纹、逐点数据、原仪器汇总、统计口径、字段来源和待补字段。完整性验证独立重放补丁，检查片段外字节、关系、内容类型及缓存结构；结果文件始终由原包生成。
+输出目录包含 `report.xlsx`、已配置的 PNG、`report.integrity.json`、`report-data.json`、`template-profile.json`。来源 JSON 记录输入指纹、逐点数据、原仪器汇总、统计口径、绘图参数、字段来源和待补字段。完整性验证独立重放补丁，检查片段外字节、关系、内容类型及缓存结构；结果文件始终由原包生成。
+
+报告完整性记录还包含 `style_preservation`：原样式和主题部件字节一致，原单元格 `s` 不变，一致的字符运行格式保留，原行属性、列定义、合并区域和条件格式不变。新出现的单元格不增加 `s`，继承母版已有行列格式。`verify_integrity` 独立重查此约束，篡改后的输出不能通过；母版制作的报告另行记录为样式创建，不混同于数据填充的零样式修改。
 
 CLI 调试入口：
 

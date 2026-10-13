@@ -2,7 +2,7 @@
 
 本机 XLSX 模板注入 MCP。最终文件从原始 ZIP 包生成；未修改部件的解压字节不变，修改部件使用可重放的字节补丁。0.2.0 新增“委托单 Excel + 仪器原始数据 ZIP + 报告模板”生成流程，Windows 和只有 WPS 的 MacBook 均无需 Microsoft Excel。通用公式/透视计算仍使用 Windows Excel 临时副本。
 
-版本下载：[v0.2.1 安装包](https://github.com/Veiluna/XMLMCP/releases/download/v0.2.1/XMLMCP-0.2.1-portable.zip) · [GitHub Releases](https://github.com/Veiluna/XMLMCP/releases)。
+版本下载：[v0.2.2 安装包](https://github.com/Veiluna/XMLMCP/releases/download/v0.2.2/XMLMCP-0.2.2-portable.zip) · [GitHub Releases](https://github.com/Veiluna/XMLMCP/releases)。
 
 ## 生成检测报告
 
@@ -10,7 +10,9 @@
 
 输出含 XLSX 报告、散点图和变压曲线 PNG、精确补丁完整性报告、来源/统计 JSON、待补字段及可复用映射。Python 计算并生成静态图片，WPS 直接显示已填结果；源数据变化后重新生成。详见 [报告生成说明](docs/report-workflow.md)。
 
-0.2.1 起，新增图名和横纵轴标题默认中文，测量单位保持 Ω·cm、MPa；标题字体随包提供。
+0.2.2 增加参考图替换和可填表格母版制作：极片单点结果可生成电阻、电阻率、电导率、厚度的均值/COV 四图，变压结果生成电阻率和厚度两图。映射明确指定要替换或删除的示例对象，清理其独占的旧媒体；图框、位置和其他对象保留。图名、坐标轴和表头使用中文，标题字体随包提供。
+
+报告工具只填数据，不复制或新建样式；独立验证原单元格样式 ID、字符格式、样式/主题部件和行列布局。原表格若是 EMF/WMF 图片，先明确制作一份可编辑的新母版，随后所有报告对这份新母版执行样式保留检查。参考 PNG 的图表外观由绘图参数重建，不声称不同数据或不同字体下像素一致。
 
 ## 安装与启动
 
@@ -86,7 +88,7 @@ MCP 调用参数与这些 CLI 参数对应；CLI 仅用于诊断，豆包配置�
 
 ## 边界
 
-支持未加密、未签名的 Transitional `.xlsx`；不插删或移动行列，不创建任意样式。文本用 inlineStr，保留已有 s 和一致的富文本字符格式。混合富文本和拼音/语音标注拒绝整格覆盖。只存于字符运行中的字体不能在数值、公式或清空操作中可靠保留，此类类型转换也会拒绝。
+支持未加密、未签名的 Transitional `.xlsx`；数据注入不插删或移动行列，不创建任意样式。`prepare-report-template` 是另行执行的母版制作入口，只适配说明中的已标记极片母版，在新输出中创建表格样式；报告工具不会隐式调用它。文本用 inlineStr，保留已有 s 和一致的富文本字符格式。混合富文本和拼音/语音标注拒绝整格覆盖。只存于字符运行中的字体不能在数值、公式或清空操作中可靠保留，此类类型转换也会拒绝。
 
 Mac 支持检查、无需重算的 XML 修改及 `generate_report` 的 Python 计算、画图和 XML 注入。通用 `apply_changes` 仍以整个工作簿为计算单位，要求 Windows Excel 后端。报告工具使用严格的离线路径：无工作簿公式/透视表，原有图表只能是可证明与新数据无关的静态文字或外部单元格快照；本地、动态或未知来源会拒绝。`capabilities.runtime` 报告实际平台能力。
 

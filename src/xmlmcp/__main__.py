@@ -31,6 +31,10 @@ def main():
     report_generate.add_argument("profile_path")
     report_generate.add_argument("output_directory")
     report_generate.add_argument("--metadata", help="UTF-8 JSON object with supplemental report fields")
+    prepare = sub.add_parser('prepare-report-template', help='Explicitly author editable tables in a new electrode mother template')
+    prepare.add_argument('base_path')
+    prepare.add_argument('reference_path')
+    prepare.add_argument('output_directory')
     parser.add_argument("--version", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(levelname)s %(name)s: %(message)s")
@@ -57,11 +61,14 @@ def main():
         elif args.command == "report-inspect":
             from .reports import inspect_report_inputs
             result = inspect_report_inputs(args.template_path, args.order_path, args.raw_zip_path, args.profile)
+        elif args.command == 'prepare-report-template':
+            from .report_template import prepare_electrode_template
+            result = prepare_electrode_template(args.base_path, args.reference_path, args.output_directory)
         else:
             from .reports import generate_report
             metadata = json.loads(Path(args.metadata).read_text(encoding="utf-8-sig")) if args.metadata else None
             result = generate_report(args.template_path, args.order_path, args.raw_zip_path, args.output_directory, args.profile_path, metadata)
-        print(result.model_dump_json(indent=2))
+        print(result.model_dump_json(indent=2) if hasattr(result, 'model_dump_json') else json.dumps(result,ensure_ascii=False,indent=2))
         if args.command == "verify" and not result.valid:
             sys.exit(1)
     except XMLMCPError as exc:

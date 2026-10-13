@@ -23,7 +23,9 @@ from xmlmcp.report_richtext import apply_text_run_values
 from xmlmcp.reports import generate_report, inspect_report_inputs
 from xmlmcp.publication import publish_bundle
 from xmlmcp.integrity import verify_integrity
-from xmlmcp.namespaces import S
+from xmlmcp.namespaces import S, XDR, P, CT, REL_BASE
+from xmlmcp.report_objects import drawing_objects, apply_example_removals
+from xmlmcp.report_styles import verify_report_styles
 
 
 def instrument_csv(kind, values=(1, 3), nul=False, encoding="utf-8"):
@@ -118,6 +120,158 @@ def test_mac_report_generation_preserves_objects_and_sources(report_inputs, tmp_
     assert len(book.images()) == 3 and Path(result.image_paths[0]).is_file()
     assert all(Path(p).read_bytes() == b for p, b in hashes.items())
     assert not list(tmp_path.glob(".xmlmcp-report-*"))
+
+
+def test_report_preserves_individual_table_styles_even_with_legacy_style_mapping(report_inputs, tmp_path):
+    paths, profile = report_inputs
+    original = Package(paths['template_path'])
+    sheet = original.parts['xl/worksheets/sheet1.xml']
+    rows = ''.join(f'<row r="{r}" ht="22" customHeight="1">' + ''.join(
+        f'<c r="{chr(65 + c)}{r}" s="{(r + c) % 2}"/>' for c in range(8)) + '</row>' for r in range(10, 14))
+    original.parts['xl/worksheets/sheet1.xml'] = sheet.replace(b'<row r="20"/>', rows.encode() + b'<row r="20"/>')
+    template = tmp_path / 'styled-table.xlsx'
+    original.write(template)
+    paths['template_path'] = str(template)
+    profile['template_fingerprint'] = Package(template).fingerprint
+    slot = profile['tables']['single_summary']
+    slot['header_style'] = {'sheet': '报告', 'range': 'A1'}
+    slot['data_style'] = {'sheet': '报告', 'range': 'C5'}
+    Path(paths['profile_path']).write_text(json.dumps(profile), encoding='utf-8')
+    result = generate_report(**paths, output_directory=str(tmp_path / 'original-styles'))
+    before, after = Package(template), Package(result.output_path)
+    checks = verify_report_styles(before, after)
+    assert checks['destination_styles_identical'] and checks['layout_styles_identical']
+    old_book, new_book = Workbook(before), Workbook(after)
+    old_cells, new_cells = old_book.cell_map(old_book.sheets[0]), new_book.cell_map(new_book.sheets[0])
+    assert {a: c.attrs.get('s') for a, c in old_cells.items()} == {a: new_cells[a].attrs.get('s') for a in old_cells}
+    assert new_book.value(new_cells['A10']) == '样品' and new_book.value(new_cells['A12']) == 'Sample-A'
+    manifest = json.loads(Path(result.integrity_report_path).read_text(encoding='utf-8'))
+    assert not any(op['op'] == 'copy_style' for op in manifest['operations'])
+    assert manifest['style_preservation']['style_parts_identical']
+    assert verify_integrity(str(template), result.output_path, result.integrity_report_path).checks['destination_styles_identical']
+    after.parts['xl/worksheets/sheet1.xml'] = after.parts['xl/worksheets/sheet1.xml'].replace(b'r="A10" s="0"', b'r="A10" s="1"')
+    with pytest.raises(XMLMCPError) as caught:
+        verify_report_styles(before, after)
+    assert caught.value.code == 'REPORT_STYLE_CHANGED'
+
+
+def test_mapped_chart_example_is_removed_without_recalculation(report_inputs, tmp_path):
+    paths, profile = report_inputs
+    template = write_template(tmp_path / 'example-chart.xlsx', image=True, chart=True)
+    before = Package(template)
+    paths['template_path'] = str(template)
+    profile['template_fingerprint'] = before.fingerprint
+    chart = next(o for o in drawing_objects(Workbook(before)) if o['kind'] == 'chart')
+    profile['example_objects'] = [{'object_id': chart['object_id'], 'kind': 'chart'}]
+    Path(paths['profile_path']).write_text(json.dumps(profile), encoding='utf-8')
+    result = generate_report(**paths, output_directory=str(tmp_path / 'replaced-chart'))
+    after = Package(result.output_path)
+    assert not Workbook(after).charts() and 'xl/charts/chart1.xml' not in after.parts
+    assert len(Workbook(after).images()) == 3
+    assert after.parts['xl/media/image1.png'] == before.parts['xl/media/image1.png']
+    assert after.parts['xl/drawings/vmlDrawing1.vml'] == before.parts['xl/drawings/vmlDrawing1.vml']
+    assert after.parts['xl/comments/comment1.xml'] == before.parts['xl/comments/comment1.xml']
+    assert verify_integrity(str(template), result.output_path, result.integrity_report_path).valid
+
+
+def test_shared_example_media_is_kept_until_last_object_removed(tmp_path):
+    template = write_template(tmp_path / 'shared-example.xlsx', image=True)
+    book = Workbook(Package(template))
+    objects = drawing_objects(book)
+    first, second = objects
+    result = apply_example_removals(book, [{'object_id': first['object_id'], 'kind': 'image'}])
+    assert not result['removed_parts'] and len(book.images()) == 1
+    assert 'xl/media/image1.png' in book.package.parts
+    result = apply_example_removals(book, [{'object_id': second['object_id'], 'kind': 'image'}])
+    assert result['removed_parts'] == ['xl/media/image1.png'] and not book.images()
+    book.package.validate()
+
+
+def test_example_chart_dependencies_keep_shared_parts(tmp_path):
+    template = write_template(tmp_path / 'dependencies.xlsx', chart=True, image=True)
+    package = Package(template)
+    # The chart's style is exclusive, but its image is also used by two pictures.
+    package.parts['xl/charts/style1.xml'] = b'<style xmlns="urn:test"/>'
+    package.parts['xl/charts/_rels/chart1.xml.rels'] = (
+        f'<Relationships xmlns="{P}"><Relationship Id="style" Type="{REL_BASE}chartStyle" Target="style1.xml"/>'
+        f'<Relationship Id="image" Type="{REL_BASE}image" Target="../media/image1.png"/></Relationships>').encode()
+    source = tmp_path / 'with-dependencies.xlsx'
+    package.write(source)
+    book = Workbook(Package(source))
+    chart = next(o for o in drawing_objects(book) if o['kind'] == 'chart')
+    apply_example_removals(book, [{'object_id': chart['object_id'], 'kind': 'chart'}])
+    assert 'xl/charts/style1.xml' not in book.package.parts
+    assert 'xl/charts/_rels/chart1.xml.rels' not in book.package.parts
+    assert 'xl/media/image1.png' in book.package.parts and len(book.images()) == 2
+    book.package.validate()
+
+
+def test_unknown_example_selection_blocks_publication(report_inputs, tmp_path):
+    paths, profile = report_inputs
+    profile['example_objects'] = [{'object_id': 'unknown|drawing|10', 'kind': 'chart'}]
+    Path(paths['profile_path']).write_text(json.dumps(profile), encoding='utf-8')
+    output = tmp_path / 'bad-object'
+    with pytest.raises(XMLMCPError) as caught:
+        generate_report(**paths, output_directory=str(output))
+    assert caught.value.code == 'REPORT_OBJECT_MAPPING' and not output.exists()
+
+
+@pytest.mark.parametrize('kind', ['single_resistance','single_resistivity','single_conductivity','single_thickness',
+                                 'pressure_resistivity','pressure_thickness'])
+def test_reference_charts_compute_real_statistics_and_keep_transparency(tmp_path, monkeypatch, kind):
+    from PIL import Image
+    from xmlmcp import report_plots
+    monkeypatch.setattr(report_plots,'SYSTEM_FONTS',())
+    monkeypatch.setattr(report_plots,'SYSTEM_BOLD_FONTS',())
+    mode=report_plots.plot_mode(kind)
+    item=parse_csv(instrument_csv(mode),'Sample-A.csv')
+    image=tmp_path/(kind+'.png')
+    with warnings.catch_warnings():
+        warnings.filterwarnings('error',message='Glyph .* missing from font')
+        record=report_plots.make_plot(kind,[{'sample_name':'Sample-A'}],{('Sample-A',mode):item},image,style='template-statistics')
+    with Image.open(image) as rendered:
+        assert rendered.mode=='RGBA' and rendered.getpixel((0,0))[3]==0
+        assert json.loads(rendered.info['XMLMCPStyle'])['background']=='transparent'
+    data=record['data']['series'][0]
+    if kind=='single_resistance':assert data['mean']==10 and data['cov_pct']==0
+    if kind=='single_resistivity':
+        assert data['mean']==2 and data['cov_pct']==pytest.approx(100/math.sqrt(2))
+    if kind=='pressure_thickness':assert data['x']==[5,10] and data['y']==[70,70]
+    assert record['style']['font']=='XMLMCPChartLabelsBold.ttf'
+
+
+def test_reference_image_replacement_cleans_only_exclusive_old_media(report_inputs,tmp_path):
+    paths,profile=report_inputs
+    before=Workbook(Package(paths['template_path']))
+    images=before.images()
+    profile['figures']={}
+    profile['figure_replacements']={'single_resistivity':images[0]['image_id'],'pressure_thickness':images[1]['image_id']}
+    profile['figure_style']='template-statistics'
+    Path(paths['profile_path']).write_text(json.dumps(profile),encoding='utf-8')
+    result=generate_report(**paths,output_directory=str(tmp_path/'replaced-statistics'))
+    after=Workbook(Package(result.output_path))
+    assert len(after.images())==2 and 'xl/media/image1.png' not in after.package.parts
+    assert [i['image_id'] for i in after.images()]==[i['image_id'] for i in images]
+    assert verify_integrity(paths['template_path'],result.output_path,result.integrity_report_path).valid
+    for old,new in zip(images,after.images()):
+        assert old['_doc'].raw(old['_pic'].child('spPr',XDR))==new['_doc'].raw(new['_pic'].child('spPr',XDR))
+        assert old['name']==new['name']
+
+
+def test_measurement_tables_use_fixed_mean_rows_and_original_styles(report_inputs,tmp_path):
+    paths,profile=report_inputs
+    profile['tables']={'single_measurements':{'target':{'sheet':'报告','range':'A10:E17'}},
+                       'pressure_measurements':{'target':{'sheet':'报告','range':'A20:E25'}}}
+    profile['figures']={}
+    Path(paths['profile_path']).write_text(json.dumps(profile),encoding='utf-8')
+    result=generate_report(**paths,output_directory=str(tmp_path/'point-tables'))
+    book=Workbook(Package(result.output_path));cells=book.cell_map(book.sheets[0])
+    assert book.value(cells['B11'])=='Sample-A' and book.value(cells['D11'])=='Sample-A'
+    assert book.value(cells['B12'])==1 and book.value(cells['B13'])==3
+    assert book.value(cells['B14']) is None and book.value(cells['B15']) is None
+    assert book.value(cells['A16'])=='平均值' and book.value(cells['B16'])==2
+    assert book.value(cells['A17'])=='COV（%）' and book.value(cells['B17'])==pytest.approx(70.7107)
+    assert result.integrity['checks']['destination_styles_identical']
 
 
 @pytest.mark.parametrize("problem,expected", [("capacity", "REPORT_CAPACITY"), ("fingerprint", "REPORT_TEMPLATE_CHANGED"),

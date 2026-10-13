@@ -30,6 +30,10 @@ flowchart LR
 | `integrity.py` | 独立补丁重放、完整部件比较、关系 ID 与缓存结构核验 |
 | `engine.py` | 整批流程、源文件变化检测、新文件发布与失败回滚 |
 | `runtime.py` | 平台能力、Windows Excel 注册状态、需计算操作的提前拒绝 |
+| `reports.py` / `report_data.py` / `report_plots.py` | 已确认的来源/模板映射、原 CSV 独立统计、静态 PNG 和离线报告注入 |
+| `report_objects.py` | 精确删除映射的示例图对象，清理其不再共享的关系与依赖部件 |
+| `report_styles.py` | 独立核验报告保留原样式、字体及行列格式 |
+| `report_template.py` | 明确执行的极片母版制作：新原生表格、参考图框和准备审计 |
 
 源码与 XML 引擎在 Windows/macOS 共用；`pywin32` 用平台依赖标记限定为 Windows。`scripts/setup.py` 在目标路径创建虚拟环境，执行 SDK stdio 自检，再生成绝对 command/args；POSIX 解释器路径不解析软链接，以保留虚拟环境。Mac 本版支持无计算依赖的 XML 操作；不提供 Excel for Mac 后端。计算依赖当前按整个工作簿判断。
 

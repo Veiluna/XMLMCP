@@ -69,6 +69,6 @@ async def inspect_report_inputs(template_path: str, order_path: str, raw_zip_pat
 async def generate_report(template_path: str, order_path: str, raw_zip_path: str, output_directory: str,
                           profile_path: str | None = None, metadata: dict[str, Scalar] | None = None,
                           profile: ReportProfile | None = None) -> ReportResult:
-    """使用已确认的映射生成报告。profile 可直接传 inspect_report_inputs 的 suggested_profile，或指定保存后的 profile_path；二选一。output_directory 为不存在的新目录，父目录应已存在。输出 report.xlsx、PNG、完整性报告、来源/统计及待补信息，并保存映射供下次复用。Windows/macOS 无需 Office：Python 计算画图、XML 局部注入，保留仪器参考快照。缺失信息留空。公式、本地动态图表/透视表、样品不匹配或容量不足整批报错。"""
+    """使用已确认的映射生成报告。profile 可直接传 inspect_report_inputs 的 suggested_profile，或指定保存后的 profile_path；二选一。output_directory 为不存在的新目录，父目录应已存在。输出 report.xlsx、PNG、完整性报告、来源/统计及待补信息，并保存映射供下次复用。Windows/macOS 无需 Office：Python 计算画图、XML 局部注入。仅填写真实值和表头，核验原单元格及字符格式不变；可按映射替换统计示例图和删除明确的示例对象。图片表格须先另行制作可填母版。缺失信息留空。公式、未移除的本地动态图表/透视表、样品不匹配或容量不足整批报错。"""
     return await invoke(reports.generate_report, template_path, order_path, raw_zip_path, output_directory, profile_path, metadata, profile)
 

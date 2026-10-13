@@ -126,7 +126,9 @@ def _new_anchor(rect: Rectangle, shape_id: int, rid: str, width: float, height: 
     return body.encode() + _fill_rect(insets) + ending.encode()
 
 
-def apply_image_changes(book: Workbook, changes: list[ImageChange], geometry: dict[str, dict]) -> None:
+def apply_image_changes(book: Workbook, changes: list[ImageChange], geometry: dict[str, dict], *, discard_replaced_media=False) -> None:
+    from collections import defaultdict
+    replaced_relations = defaultdict(set)
     for change in changes:
         require(change.geometry_key in geometry, "IMAGE_GEOMETRY", "Excel 未返回目标几何尺寸")
         dimensions = geometry[change.geometry_key]
@@ -169,6 +171,7 @@ def apply_image_changes(book: Workbook, changes: list[ImageChange], geometry: di
                        if next(p.descendants("cNvPr", XDR)).attrs["id"] == original["shape_id"])
             fill = pic.child("blipFill", XDR)
             blip = next(fill.descendants("blip", A))
+            replaced_relations[drawing_part].add(blip.attrs[R + '}embed'])
             # Keep its namespace bindings local, including templates using a different r prefix.
             opening = doc.data[blip.start:blip.open_end]
             import re
@@ -196,4 +199,7 @@ def apply_image_changes(book: Workbook, changes: list[ImageChange], geometry: di
             else:
                 edits.append(append_children(doc.data, stretch, _fill_rect(insets), "image:fit", change.geometry_key))
             package.patch(drawing_part, edits)
+    if discard_replaced_media:
+        from .report_objects import remove_unused_relations
+        remove_unused_relations(book, replaced_relations)
 

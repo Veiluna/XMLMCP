@@ -100,7 +100,8 @@ def verify_packages(source: Package, output: Package, report: dict) -> Integrity
             expected[part] = apply_edits(expected[part], edits)[0]
             require(digest(expected[part]) == stage["after_sha256"], "PATCH_RESULT", "补丁结果指纹不一致", part=part)
         for part, info in report["removed_parts"].items():
-            require(part in expected and digest(expected[part]) == info["sha256"] and info["reason"] == "calculation:chain",
+            require(part in expected and digest(expected[part]) == info["sha256"]
+                    and info["reason"] in ('calculation:chain', 'image:example_dependency'),
                     "REMOVED_PART", "删除部件不在许可清单中")
             del expected[part]
         for part, info in report["added_parts"].items():
@@ -110,6 +111,9 @@ def verify_packages(source: Package, output: Package, report: dict) -> Integrity
         require(expected == output.parts, "UNAUTHORIZED_CHANGE", "输出含补丁清单以外的字节变化")
         checks["patch_replay_valid"] = True
         checks["outside_patches_identical"] = True
+        if report.get('style_preservation'):
+            from .report_styles import verify_report_styles
+            checks.update(verify_report_styles(source, output))
         checks.update(output.validate())
         checks.update(validate_caches(Workbook(output), bool(report.get("calculation", {}).get("calculated"))))
     except (XMLMCPError, KeyError, ValueError, TypeError) as exc:

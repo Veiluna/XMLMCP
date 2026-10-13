@@ -14,8 +14,9 @@ class OrderLayout(Model):
 
 class TableSlot(Model):
     target: Target
-    header_style: Target | None = None
-    data_style: Target | None = None
+    # Read old profiles, but reports always retain each destination's own style.
+    header_style: Target | None = Field(default=None, description='旧映射兼容字段；报告生成忽略此项，保留目标原样式')
+    data_style: Target | None = Field(default=None, description='旧映射兼容字段；报告生成忽略此项，保留目标原样式')
 
 
 class CheckboxBinding(Model):
@@ -31,6 +32,11 @@ class TextRunBinding(Model):
     prefix: str = ""
 
 
+class ExampleObject(Model):
+    object_id: str
+    kind: Literal['chart', 'image']
+
+
 class ReportProfile(Model):
     schema_version: Literal[1] = 1
     profile_id: str
@@ -41,6 +47,9 @@ class ReportProfile(Model):
     sample_rows: dict[str, Target] = Field(default_factory=dict)
     tables: dict[str, TableSlot] = Field(default_factory=dict)
     figures: dict[str, Target] = Field(default_factory=dict)
+    figure_replacements: dict[str, str] = Field(default_factory=dict)
+    figure_style: Literal['standard', 'template-statistics'] = 'standard'
+    example_objects: list[ExampleObject] = Field(default_factory=list)
     checkboxes: list[CheckboxBinding] = Field(default_factory=list)
     text_runs: list[TextRunBinding] = Field(default_factory=list)
     defaults: dict[str, Scalar] = Field(default_factory=dict)
@@ -61,6 +70,7 @@ class ReportInspection(Model):
     mapping_status: str
     available_targets: list[dict]
     field_catalog: dict[str, str]
+    available_objects: list[dict] = Field(default_factory=list)
 
 
 class ReportResult(Model):
