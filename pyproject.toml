@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xmlmcp"
-version = "0.2.0"
+version = "0.2.1"
 description = "Byte-preserving XLSX template injection over local MCP stdio"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -21,6 +21,9 @@ xmlmcp = "xmlmcp.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+xmlmcp = ["fonts/*.ttf", "fonts/*.txt", "fonts/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

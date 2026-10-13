@@ -4,6 +4,23 @@ from threading import Lock
 from .errors import require
 
 PLOT_LOCK = Lock()
+SYSTEM_FONTS = (Path("C:/Windows/Fonts/msyh.ttc"), Path("/System/Library/Fonts/PingFang.ttc"),
+                Path("/System/Library/Fonts/STHeiti Light.ttc"))
+LABEL_FONT = Path(__file__).parent / "fonts" / "XMLMCPChartLabels.ttf"
+PLOT_LABELS = {
+    "single_point": {"title": "单点电阻率散点图", "x": "测量点序号", "y": "电阻率（Ω·cm）"},
+    "pressure": {"title": "变压电阻率曲线", "x": "实测压强（MPa）", "y": "电阻率（Ω·cm）"},
+}
+
+
+def _font_properties(texts):
+    from matplotlib.font_manager import FontProperties
+    from matplotlib.ft2font import FT2Font
+    characters = {ord(c) for text in texts for c in text}
+    for path in (*SYSTEM_FONTS, LABEL_FONT):
+        if path.is_file() and characters <= FT2Font(str(path)).get_charmap().keys():
+            return FontProperties(fname=str(path))
+    require(False, "PLOT_FONT", "中文标题或样品名含当前字体不能显示的字符，请安装相应中文字体")
 
 
 def make_plot(kind: str, samples: list[dict], files: dict, path: Path, aspect: float = 2.8):
@@ -11,16 +28,8 @@ def make_plot(kind: str, samples: list[dict], files: dict, path: Path, aspect: f
     with PLOT_LOCK:
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_agg import FigureCanvasAgg
-        from matplotlib.font_manager import FontProperties
-        from matplotlib.ft2font import FT2Font
-        fonts = [Path("C:/Windows/Fonts/msyh.ttc"), Path("/System/Library/Fonts/PingFang.ttc"),
-                 Path("/System/Library/Fonts/STHeiti Light.ttc")]
-        font = next((p for p in fonts if p.is_file()), None)
-        prop = FontProperties(fname=str(font)) if font else FontProperties(family="DejaVu Sans")
-        from matplotlib.font_manager import findfont
-        charmap = FT2Font(findfont(prop)).get_charmap()
-        require(all(all(ord(c) in charmap for c in sample["sample_name"]) for sample in samples),
-                "PLOT_FONT", "样品名含当前字体不能显示的字符，请安装相应字体或使用可显示的样品标识")
+        labels = PLOT_LABELS[kind]
+        prop = _font_properties([*labels.values(), *(s["sample_name"] for s in samples)])
         fig = Figure(figsize=(11, 11 / max(1.8, min(3.2, aspect))), dpi=180)
         FigureCanvasAgg(fig)
         ax = fig.add_subplot()
@@ -34,9 +43,9 @@ def make_plot(kind: str, samples: list[dict], files: dict, path: Path, aspect: f
                 ax.scatter(x, y, color=color, label=sample["sample_name"], s=45, alpha=.85, edgecolors="white", linewidths=.5)
             else:
                 ax.plot([r["pressure_mpa"] for r in item["records"]], y, color=color, marker="o", markersize=4, linewidth=1.7, label=sample["sample_name"])
-        ax.set_xlabel("Measurement point" if kind == "single_point" else "Measured pressure (MPa)", fontsize=14)
-        ax.set_ylabel("Resistivity (Ω·cm)", fontsize=14)
-        ax.set_title("Single point resistivity" if kind == "single_point" else "Pressure and resistivity", fontsize=16, loc="left", pad=12)
+        ax.set_xlabel(labels["x"], fontproperties=prop, fontsize=14)
+        ax.set_ylabel(labels["y"], fontproperties=prop, fontsize=14)
+        ax.set_title(labels["title"], fontproperties=prop, fontsize=16, loc="left", pad=12)
         ax.tick_params(labelsize=12)
         ax.grid(True, color="#d5dde3", linewidth=.6, alpha=.8)
         ax.spines[["top", "right"]].set_visible(False)

@@ -6,6 +6,7 @@ import json
 import math
 import sys
 import zipfile
+import warnings
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -77,6 +78,21 @@ def test_instrument_encoding_nul_and_independent_statistics():
     assert result["sample_cov_pct"]["resistivity_ohm_cm"] == pytest.approx(100 / math.sqrt(2))
     assert item["removed_line_prefix_nuls"] > 0 and item["encoding"] == "gb18030"
     assert item["instrument_summary"]["COV%"]["resistivity_ohm_cm"] == 99
+
+
+@pytest.mark.parametrize("kind", ["single_point", "pressure"])
+def test_chinese_plots_render_without_system_fonts(tmp_path, monkeypatch, kind):
+    from PIL import Image
+    from xmlmcp import report_plots
+    monkeypatch.setattr(report_plots, "SYSTEM_FONTS", ())
+    sample = {"sample_name": "Sample-A"}
+    item = parse_csv(instrument_csv(kind), "Sample-A.csv")
+    image = tmp_path / (kind + ".png")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", message="Glyph .* missing from font")
+        report_plots.make_plot(kind, [sample], {("Sample-A", kind): item}, image)
+    with Image.open(image) as rendered:
+        assert rendered.format == "PNG" and rendered.width > 1000
 
 
 def test_mac_report_generation_preserves_objects_and_sources(report_inputs, tmp_path, monkeypatch):

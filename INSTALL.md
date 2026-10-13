@@ -1,6 +1,6 @@
 # 在其他电脑安装 XMLMCP
 
-适用版本：0.2.0。本地 stdio MCP；Windows 和 macOS 使用同一份源码包，安装脚本在目标电脑创建虚拟环境，并生成该电脑的 `command/args` 配置。
+适用版本：0.2.1。本地 stdio MCP；Windows 和 macOS 使用同一份源码包，安装脚本在目标电脑创建虚拟环境，并生成该电脑的 `command/args` 配置。
 
 ## 支持范围
 
@@ -23,7 +23,7 @@
 
 ## 准备
 
-1. 从 [GitHub Releases](https://github.com/Veiluna/XMLMCP/releases) 下载 `XMLMCP-0.2.0-portable.zip` 并解压。进入解压后的 **XMLMCP** 文件夹，应能看到 `pyproject.toml`、`src` 和 `scripts`。
+1. 从 [GitHub Releases](https://github.com/Veiluna/XMLMCP/releases) 下载 `XMLMCP-0.2.1-portable.zip` 并解压。进入解压后的 **XMLMCP** 文件夹，应能看到 `pyproject.toml`、`src` 和 `scripts`。
 2. 安装 [Python 3.12 或更高版本](https://www.python.org/downloads/)。本机已验证 Python 3.14.7；Mac 依赖预检使用 Python 3.12。Windows 安装时让 Python 命令可用；Mac 使用对应 Apple 芯片或 Intel 的官方安装包。
 3. 首次安装需要网络下载固定版本依赖。检查和无需重算的修改不要求安装 Office。
 
