@@ -20,6 +20,7 @@ class CellChange:
     cached: bool = False
     cache_type: str | None = None
     preserve_formula: bool = False
+    remove_style: bool = False
 
 
 def preflight_cells(book: Workbook, operations: list[Operation]) -> dict[str, dict[str, CellChange]]:
@@ -113,6 +114,8 @@ def changed_cell(book: Workbook, doc: XMLDocument, node, change: CellChange) -> 
     tag = raw[:node.open_end-node.start]
     if change.style is not None:
         tag = _set_open_attribute(tag, b"s", change.style)
+    elif change.remove_style:
+        tag = _set_open_attribute(tag, b"s", None)
     if change.value is not UNSET or change.formula is not None:
         if change.cached:
             kind, fragment = value_fragment(node, change.value, None, None, change.cache_type or "n")
@@ -121,6 +124,8 @@ def changed_cell(book: Workbook, doc: XMLDocument, node, change: CellChange) -> 
         tag = set_attribute(doc.data, node, b"t", kind)
         if change.style is not None:
             tag = _set_open_attribute(tag, b"s", change.style)
+        elif change.remove_style:
+            tag = _set_open_attribute(tag, b"s", None)
         if node.self_closing:
             return tag[:-2] + b">" + fragment + b"</" + node.raw_name + b">"
         for child in node.children:

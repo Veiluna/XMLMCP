@@ -35,6 +35,9 @@ def main():
     prepare.add_argument('base_path')
     prepare.add_argument('reference_path')
     prepare.add_argument('output_directory')
+    prepare.add_argument('--sample-count', type=int, default=5)
+    prepare.add_argument('--single-points', type=int, default=10)
+    prepare.add_argument('--pressure-points', type=int, default=12)
     parser.add_argument("--version", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(levelname)s %(name)s: %(message)s")
@@ -63,7 +66,8 @@ def main():
             result = inspect_report_inputs(args.template_path, args.order_path, args.raw_zip_path, args.profile)
         elif args.command == 'prepare-report-template':
             from .report_template import prepare_electrode_template
-            result = prepare_electrode_template(args.base_path, args.reference_path, args.output_directory)
+            result = prepare_electrode_template(args.base_path, args.reference_path, args.output_directory,
+                                               sample_count=args.sample_count, single_points=args.single_points, pressure_points=args.pressure_points)
         else:
             from .reports import generate_report
             metadata = json.loads(Path(args.metadata).read_text(encoding="utf-8-sig")) if args.metadata else None

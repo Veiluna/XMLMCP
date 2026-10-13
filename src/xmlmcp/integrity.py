@@ -106,14 +106,21 @@ def verify_packages(source: Package, output: Package, report: dict) -> Integrity
             del expected[part]
         for part, info in report["added_parts"].items():
             require(part not in expected and part in output.parts and digest(output.parts[part]) == info["sha256"]
-                    and info["reason"].startswith("image:"), "ADDED_PART", "新增部件不在许可清单中")
+                    and (info["reason"].startswith("image:") or info["reason"] == 'cell:template_layout'), "ADDED_PART", "新增部件不在许可清单中")
+            if info['reason'] == 'cell:template_layout':
+                from .report_table_layout import LAYOUT_NS
+                require(part.startswith('customXml/xmlmcpTableLayouts') and output.doc(part).root.ns == LAYOUT_NS,
+                        'ADDED_PART', '新增布局元数据部件不符合格式')
             expected[part] = output.parts[part]
         require(expected == output.parts, "UNAUTHORIZED_CHANGE", "输出含补丁清单以外的字节变化")
         checks["patch_replay_valid"] = True
         checks["outside_patches_identical"] = True
         if report.get('style_preservation'):
             from .report_styles import verify_report_styles
-            checks.update(verify_report_styles(source, output))
+            checks.update(verify_report_styles(source, output, report.get('table_layouts')))
+        if report.get('reference_preservation'):
+            from .report_preservation import verify_preservation
+            checks.update(verify_preservation(source, output, report['reference_preservation']))
         checks.update(output.validate())
         checks.update(validate_caches(Workbook(output), bool(report.get("calculation", {}).get("calculated"))))
     except (XMLMCPError, KeyError, ValueError, TypeError) as exc:

@@ -1,0 +1,108 @@
+{
+  "version": "0.2.3",
+  "recorded_at": "2026-10-13T05:29:20.614437+00:00",
+  "unit_tests": {
+    "passed": 89,
+    "failed": 0,
+    "report": "validation/portable-unit-tests.xml"
+  },
+  "mother_preparation": {
+    "integrity": "passed",
+    "native_result_tables": 2,
+    "reference_plot_frames": 6,
+    "original_parts_removed": 0,
+    "source_not_overwritten": true,
+    "style_authoring": "explicit preparation only"
+  },
+  "user_report": {
+    "integrity": "passed",
+    "unchanged_parts": 44,
+    "changed_parts": 3,
+    "new_media_parts": 6,
+    "removed_exclusive_result_media_parts": 6,
+    "style_checks": {
+      "patch_replay_valid": true,
+      "outside_patches_identical": true,
+      "destination_styles_identical": true,
+      "rich_text_styles_identical": true,
+      "style_parts_identical": true,
+      "layout_styles_identical": true,
+      "original_cells_checked": 1874,
+      "outside_table_styles_identical": true,
+      "table_cells_reuse_original_styles": true,
+      "reference_information_identical": true,
+      "preserved_reference_rows": 120,
+      "preserved_original_objects": 17,
+      "preserved_object_parts": 14,
+      "xml_valid": true,
+      "relationships_valid": true,
+      "content_types_valid": true,
+      "relationship_count": 38,
+      "cache_structure_valid": true,
+      "formula_count": 0,
+      "chart_cache_count": 0,
+      "pivot_cache_count": 0,
+      "relationship_ids_valid": true
+    },
+    "original_reference_images_preserved": 17,
+    "reference_information_rows_preserved": 120,
+    "reference_pages_pixel_identical": true,
+    "reference_pages": 2,
+    "new_plots": 6,
+    "missing_field_count": 4,
+    "wps_windows": {
+      "version": "12.0",
+      "readonly": true,
+      "first_open_values_passed": true,
+      "column_widths_and_row_heights_unchanged": true,
+      "result_pages_visually_checked": 2,
+      "pressure_title_and_header_bold": true,
+      "new_template_checkbox_glyphs_passed": true
+    },
+    "dynamic_table_two_sample_test": {
+      "readonly": true,
+      "samples": 2,
+      "columns": 5,
+      "table_range": "A106:E115",
+      "table_width_pt": 566.4,
+      "report_width_pt": 1192.8,
+      "sample_headers_passed": true,
+      "unused_columns_have_original_background": true,
+      "pressure_header_bold": true
+    },
+    "table_ranges": [
+      "A106:K115",
+      "A146:K159"
+    ],
+    "mac_wps_display": "not_run",
+    "human_repair_dialog_check": "not_run",
+    "excel_windows": {
+      "excel_version": "16.0",
+      "files": [
+        {
+          "kind": "mother",
+          "opened_normally": true,
+          "readonly": true,
+          "original_names_preserved": true,
+          "names": 17,
+          "sheets": 1,
+          "pressure_header_bold": true,
+          "first_open_values_passed": false
+        },
+        {
+          "kind": "report",
+          "opened_normally": true,
+          "readonly": true,
+          "original_names_preserved": true,
+          "names": 17,
+          "sheets": 1,
+          "pressure_header_bold": true,
+          "first_open_values_passed": true
+        }
+      ],
+      "files_not_resaved": true
+    },
+    "new_png_style": "reference appearance reconstruction"
+  },
+  "private_business_inputs_and_outputs": "not included in the release"
+}

@@ -274,6 +274,64 @@ def test_measurement_tables_use_fixed_mean_rows_and_original_styles(report_input
     assert result.integrity['checks']['destination_styles_identical']
 
 
+def test_dynamic_report_uses_actual_counts_and_preserves_reference(report_inputs,tmp_path):
+    from test_report_template import mother_fixture, reference_fixture
+    from xmlmcp.cells import apply_cell_changes, CellChange
+    from xmlmcp.report_template import prepare_electrode_template
+    from xmlmcp.report_table_layout import read_layouts
+    paths,profile=report_inputs
+    base=mother_fixture(tmp_path/'base.xlsx',chart=False)
+    book=Workbook(Package(base))
+    apply_cell_changes(book, {'报告':{'A167':CellChange(value='极片电阻仪参考资料'), 'A168':CellChange(value='保留资料')}})
+    protected=tmp_path/'marked.xlsx';book.package.write(protected)
+    prepared=prepare_electrode_template(str(protected),str(reference_fixture(tmp_path/'ref.xlsx')),str(tmp_path/'mother'))
+    paths['template_path']=prepared['output_path']
+    mother=Workbook(Package(prepared['output_path']))
+    profile['template_fingerprint']=mother.package.fingerprint
+    profile['tables']=read_layouts(mother);profile['figures']={}
+    profile['sample_rows']={}
+    profile['figure_replacements']={i['name'].removeprefix('XMLMCP Reference '):i['image_id'] for i in mother.images() if i['name'].startswith('XMLMCP Reference ')}
+    profile['figure_style']='template-statistics'
+    Path(paths['profile_path']).write_text(json.dumps(profile),encoding='utf-8')
+    result=generate_report(**paths,output_directory=str(tmp_path/'actual-counts'))
+    after=Workbook(Package(result.output_path));cells=after.cell_map(after.sheets[0])
+    assert after.value(cells['A110'])=='平均值' and after.value(cells['B110'])==2
+    assert after.value(cells['A111'])=='COV（%）' and after.value(cells['A118']) is None
+    assert cells['F107'].attrs.get('s') is None and cells['F147'].attrs.get('s') is None
+    data=json.loads(Path(result.data_report_path).read_text(encoding='utf-8'))
+    assert [t['range'] for t in data['table_layouts']]==['A106:E111','A146:E149']
+    assert result.integrity['checks']['reference_information_identical']
+    assert result.integrity['checks']['style_parts_identical']
+    assert mother.package.parts['xl/styles.xml']==after.package.parts['xl/styles.xml']
+    assert verify_integrity(paths['template_path'],result.output_path,result.integrity_report_path).valid
+    # An explicitly edited profile still cannot select protected reference images.
+    original_id=next(i['image_id'] for i in mother.images() if not i['name'].startswith('XMLMCP Reference '))
+    profile['example_objects']=[{'object_id':original_id,'kind':'image'}]
+    Path(paths['profile_path']).write_text(json.dumps(profile),encoding='utf-8')
+    with pytest.raises(XMLMCPError) as error:
+        generate_report(**paths,output_directory=str(tmp_path/'blocked-reference'))
+    assert error.value.code=='REPORT_REFERENCE_CHANGED' and not (tmp_path/'blocked-reference').exists()
+
+
+def test_cell_checkbox_glyph_changes_keep_mixed_fonts_and_shared_strings(tmp_path):
+    from xmlmcp.controls import apply_checkbox_text_values
+    source=write_template(tmp_path/'glyph-source.xlsx',mixed=True)
+    package=Package(source)
+    shared=package.parts['xl/sharedStrings.xml']
+    shared=shared.replace(b'Small English','☐ 寄回'.encode()).replace(b'Different','☐ 无需寄回'.encode())
+    # The mixed fixture's second run may use a different literal; set its text directly.
+    from xmlmcp.xmlbytes import XMLDocument, Edit
+    package.parts['xl/sharedStrings.xml']=shared
+    doc=package.doc('xl/sharedStrings.xml');texts=list(doc.root.children[1].descendants('t',S))
+    package.patch('xl/sharedStrings.xml',[Edit(texts[1].open_end,texts[1].close_start,'　☐ 无需寄回'.encode(),'cell:test','glyph')])
+    input_path=tmp_path/'glyph.xlsx';package.write(input_path)
+    before=Package(input_path);book=Workbook(Package(input_path))
+    apply_checkbox_text_values(book,[{'target':{'sheet':'报告','range':'A2'},'selections':[{'label':'寄回','checked':True},{'label':'无需寄回','checked':False}]}])
+    assert book.value(book.cell_map(book.sheets[0])['A2'])=='☑ 寄回　☐ 无需寄回'
+    assert before.parts['xl/sharedStrings.xml']==book.package.parts['xl/sharedStrings.xml']
+    assert verify_report_styles(before,book.package)['rich_text_styles_identical']
+
+
 @pytest.mark.parametrize("problem,expected", [("capacity", "REPORT_CAPACITY"), ("fingerprint", "REPORT_TEMPLATE_CHANGED"),
                                                 ("samples", "SAMPLE_MISMATCH"), ("formula", "OFFLINE_FORMULA"),
                                                 ("local_chart", "OFFLINE_CHART_DEPENDENCY"), ("collision", "OUTPUT_EXISTS")])

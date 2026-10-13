@@ -1,6 +1,6 @@
 # 在其他电脑安装 XMLMCP
 
-适用版本：0.2.2。本地 stdio MCP；Windows 和 macOS 使用同一份源码包，安装脚本在目标电脑创建虚拟环境，并生成该电脑的 `command/args` 配置。
+适用版本：0.2.3。本地 stdio MCP；Windows 和 macOS 使用同一份源码包，安装脚本在目标电脑创建虚拟环境，并生成该电脑的 `command/args` 配置。
 
 ## 支持范围
 
@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 安装、启动、五个 MCP 工具 | 支持 | 支持；仍待 Mac 真机复测 |
 | 委托单 + CSV ZIP + 已确认映射生成报告、统计表和图片 | 支持，无需 Excel | 支持，无需 Excel，可用 WPS 查看 |
-| 参考图替换、明确映射的示例图删除、原单元格样式核验 | 支持，无需 Excel | 支持，无需 Excel |
+| 参考资料保留、统计图替换、动态表格及原样式核验 | 支持，无需 Excel | 支持，无需 Excel |
 | 制作适配极片母版的可编辑结果表格 | 支持，另行运行准备入口 | 支持，另行运行准备入口 |
 | 检查工作表、命名区域、样式及现有对象 | 支持，无需 Excel | 支持，无需 Excel |
 | 无需重算的文字、数值、布尔、矩阵、清空、复制已有样式 | 支持，无需 Excel | 支持，无需 Excel |
@@ -25,7 +25,7 @@
 
 ## 准备
 
-1. 从 [GitHub Releases](https://github.com/Veiluna/XMLMCP/releases) 下载 `XMLMCP-0.2.2-portable.zip` 并解压。进入解压后的 **XMLMCP** 文件夹，应能看到 `pyproject.toml`、`src` 和 `scripts`。
+1. 从 [GitHub Releases](https://github.com/Veiluna/XMLMCP/releases) 下载 `XMLMCP-0.2.3-portable.zip` 并解压。进入解压后的 **XMLMCP** 文件夹，应能看到 `pyproject.toml`、`src` 和 `scripts`。
 2. 安装 [Python 3.12 或更高版本](https://www.python.org/downloads/)。本机已验证 Python 3.14.7；Mac 依赖预检使用 Python 3.12。Windows 安装时让 Python 命令可用；Mac 使用对应 Apple 芯片或 Intel 的官方安装包。
 3. 首次安装需要网络下载固定版本依赖。检查和无需重算的修改不要求安装 Office。
 

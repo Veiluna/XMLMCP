@@ -240,6 +240,14 @@ def generate_report(template_path: str, order_path: str, raw_zip_path: str, outp
     require(profile_path or profile is not None, "REPORT_PROFILE", "必须指定已确认的 profile 或 profile_path")
     template, order, raw, profile, fields, samples, files, stats, missing, warnings = _prepare(template_path, order_path, raw_zip_path, profile_path, metadata, profile)
     require(profile is not None, "REPORT_PROFILE", "请先确认并保存模板映射")
+    from .report_preservation import preservation_contract
+    from .report_table_layout import plan_table_layouts
+    contract = preservation_contract(template)
+    protected = set(contract['object_ids'])
+    require(not protected.intersection(o.object_id for o in profile.example_objects)
+            and not protected.intersection(profile.figure_replacements.values()),
+            'REPORT_REFERENCE_CHANGED', '映射试图删除或替换应保留的参考资料对象')
+    layouts = plan_table_layouts(template, profile, samples, files)
     # Preflight remaining objects after removing the reviewed examples. This in-memory
     # package is discarded; the final output still starts from the original input.
     apply_example_removals(template, profile.example_objects)
@@ -256,12 +264,21 @@ def generate_report(template_path: str, order_path: str, raw_zip_path: str, outp
         require(key not in run_keys and rect.address not in changes.get(sheet["name"], {}), "TARGET_CONFLICT", "富文本片段与其他填充目标冲突")
         run_keys.add(key)
     selected = []
+    glyph_values = {}
     if profile.checkboxes:
         require(profile.order.checkbox_sheet, "CHECKBOX_MAPPING", "未配置来源复选框工作表")
         source_controls = checkboxes(order, profile.order.checkbox_sheet)
         for binding in profile.checkboxes:
             matches = [c for c in source_controls if c["label"] == binding.source_label]
             require(len(matches) == 1, "CHECKBOX_MAPPING", "来源复选框不唯一或不存在", label=binding.source_label)
+            if binding.target is not None:
+                sheet, rect = template.resolve(binding.target)
+                rect = template.merged_anchor(sheet,rect,True)
+                key=(sheet['name'],rect.address)
+                require(key not in run_keys and rect.address not in changes.get(sheet['name'],{}), 'TARGET_CONFLICT', '方框文字与其他填充目标冲突')
+                entry=glyph_values.setdefault(key,{'target':{'sheet':sheet['name'],'range':rect.address},'selections':[]})
+                entry['selections'].append({'label':binding.target_label,'checked':matches[0]['checked']})
+                continue
             target_matches = [c for c in checkboxes(template, binding.target_sheet) if c["label"] == binding.target_label]
             require(len(target_matches) == 1, "CHECKBOX_MAPPING", "目标复选框不唯一或不存在", label=binding.target_label)
             selected.append({"sheet": binding.target_sheet, "label": binding.target_label, "checked": matches[0]["checked"]})
@@ -305,11 +322,14 @@ def generate_report(template_path: str, order_path: str, raw_zip_path: str, outp
         applied = apply_changes(str(template.package.path), str(bundle / "report.xlsx"), operations,
                                 offline=True, digit_width=profile.maximum_digit_width_px, checkbox_values=selected, text_run_values=text_runs,
                                 preserve_styles=True, example_objects=profile.example_objects,
-                                discard_replaced_media=bool(profile.figure_replacements), provenance=provenance)
+                                discard_replaced_media=bool(profile.figure_replacements), provenance=provenance,
+                                table_layouts=layouts, reference_preservation=contract, checkbox_text_values=list(glyph_values.values()))
         data_report = {"provenance": provenance, "fields": fields, "samples": samples, "statistics": stats, "raw_files": raw["files"],
                        "missing_fields": missing, "warnings": warnings, "checkbox_values": selected,
+                       "checkbox_text_values":list(glyph_values.values()),
                        "example_objects": [o.model_dump() for o in profile.example_objects],
                        'plots': plot_records,
+                       'table_layouts': [{'table':p['table'],'range':p['active'],'sheet':p['sheet']} for p in layouts],
                        "computation": {"engine": "python", "office_required": False, "workbook_recalculated": False, "plots": "static PNG; regenerate to update"}}
         (bundle / "report-data.json").write_text(json.dumps(data_report, ensure_ascii=False, indent=2), encoding="utf-8")
         (bundle / "template-profile.json").write_text(profile.model_dump_json(indent=2), encoding="utf-8")

@@ -12,17 +12,25 @@ class OrderLayout(Model):
     checkbox_sheet: str | None = None
 
 
+class MeasurementLayout(Model):
+    region: Target
+    styles: dict[str, str]
+    background_styles: dict[str, str | None]
+
+
 class TableSlot(Model):
     target: Target
     # Read old profiles, but reports always retain each destination's own style.
     header_style: Target | None = Field(default=None, description='旧映射兼容字段；报告生成忽略此项，保留目标原样式')
     data_style: Target | None = Field(default=None, description='旧映射兼容字段；报告生成忽略此项，保留目标原样式')
+    layout: MeasurementLayout | None = Field(default=None, description='已制作母版的逐点表格布局；按实际数据增减单元格，复用原样式并保留行高列宽')
 
 
 class CheckboxBinding(Model):
     source_label: str
     target_label: str
     target_sheet: str
+    target: Target | None = Field(default=None, description='单元格方框文字的位置；为空时使用 VML 表单控件')
 
 
 class TextRunBinding(Model):

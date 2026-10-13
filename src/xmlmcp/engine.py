@@ -82,7 +82,8 @@ def _publish_noclobber(source: Path, destination: Path):
 
 def apply_changes(input_path: str, output_path: str, operations: list[Operation | dict], *, calculator=None,
                   offline: bool = False, digit_width: float = 7, checkbox_values=None, text_run_values=None,
-                  preserve_styles: bool = False, example_objects=None, discard_replaced_media=False, provenance=None) -> ApplyResult:
+                  preserve_styles: bool = False, example_objects=None, discard_replaced_media=False, provenance=None,
+                  table_layouts=None, reference_preservation=None, checkbox_text_values=None) -> ApplyResult:
     ops = OPERATIONS.validate_python(operations)
     require(ops, "NO_OPERATIONS", "操作列表不能为空")
     package = Package(input_path)
@@ -96,6 +97,9 @@ def apply_changes(input_path: str, output_path: str, operations: list[Operation 
     require(not output.exists() and not report_path.exists(), "OUTPUT_EXISTS", "输出或报告已存在，不会覆盖")
     require(output.parent.is_dir(), "OUTPUT_DIRECTORY", "输出目录必须已经存在")
     book = Workbook(package)
+    if table_layouts:
+        from .report_table_layout import apply_table_layouts
+        apply_table_layouts(book, table_layouts)
     replacements = None
     if example_objects:
         from .report_objects import apply_example_removals
@@ -123,6 +127,9 @@ def apply_changes(input_path: str, output_path: str, operations: list[Operation 
     if checkbox_values:
         from .controls import apply_checkbox_values
         apply_checkbox_values(book, checkbox_values)
+    if checkbox_text_values:
+        from .controls import apply_checkbox_text_values
+        apply_checkbox_text_values(book, checkbox_text_values)
     calculation = {"calculated": False, "engine": None, "external_refresh": False,
                    "reason": "No dependent formulas/charts/pivots were changed"}
     owned_output = owned_report = False
@@ -171,7 +178,12 @@ def apply_changes(input_path: str, output_path: str, operations: list[Operation 
             result = Package(staging)
             if preserve_styles:
                 from .report_styles import verify_report_styles
-                report['style_preservation'] = verify_report_styles(original, result)
+                report['table_layouts'] = table_layouts or []
+                report['style_preservation'] = verify_report_styles(original, result, table_layouts)
+            if reference_preservation:
+                report['reference_preservation'] = reference_preservation
+                from .report_preservation import verify_preservation
+                report['reference_verification'] = verify_preservation(original, result, reference_preservation)
             integrity = verify_packages(original, result, report)
             require(integrity.valid, "INTEGRITY_FAILED", "输出未通过完整性验证", errors=integrity.errors)
             report["verification"] = integrity.model_dump()

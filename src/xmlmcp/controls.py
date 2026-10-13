@@ -2,6 +2,58 @@
 from .errors import require
 from .namespaces import R
 from .xmlbytes import Edit, append_children, set_attribute
+import re
+
+
+def checkbox_text_pattern(label):
+    return re.compile(r'([☐☑])\s*' + re.escape(label) + r'(?=$|\s)')
+
+
+def apply_checkbox_text_values(book, values):
+    """Change only each checkbox character; isolate shared strings and retain all runs."""
+    from .models import Target
+    from .namespaces import S
+    from .xmlbytes import XMLDocument, standalone, apply_edits, xml_escape
+    from .strings import encode_xstring
+    seen = set()
+    for item in values:
+        sheet, rect = book.resolve(Target.model_validate(item['target']))
+        rect = book.merged_anchor(sheet, rect, True)
+        key = (sheet['name'], rect.address)
+        require(rect.size == (1,1) and key not in seen, 'TARGET_CONFLICT', '方框文字目标重复或不是单格')
+        seen.add(key)
+        doc = book.sheet_doc(sheet)
+        cell = book.cell_map(sheet).get(rect.address)
+        source = book.string_node(cell)
+        require(source is not None and not cell.child('f',S), 'CHECKBOX_MAPPING', '方框目标不是文字单元格')
+        copied = XMLDocument(standalone(source.document, source))
+        nodes = [n for n in copied.root.descendants('t', S)]
+        original = ''.join(n.text for n in nodes)
+        replacements = {}
+        for selection in item['selections']:
+            matches = list(checkbox_text_pattern(selection['label']).finditer(original))
+            require(len(matches) == 1, 'CHECKBOX_MAPPING', '单元格方框标签不存在或不唯一', label=selection['label'])
+            index = matches[0].start(1)
+            require(index not in replacements, 'TARGET_CONFLICT', '方框标签重复指定')
+            replacements[index] = '☑' if selection['checked'] else '☐'
+        edits, offset = [], 0
+        for node in nodes:
+            text = ''.join(replacements.get(offset+i, char) for i,char in enumerate(node.text))
+            offset += len(node.text)
+            if text != node.text:
+                opening = set_attribute(copied.data, node, b'xml:space', 'preserve')
+                fragment = opening + xml_escape(encode_xstring(text)) + b'</' + node.raw_name + b'>'
+                edits.append(Edit(node.start,node.end,fragment,'control:text_checkbox',rect.address))
+        if not edits:
+            continue
+        payload = apply_edits(copied.data, edits)[0]
+        root = XMLDocument(payload).root
+        new_name = root.qualify('is')
+        payload = payload[:root.start+1] + new_name + payload[root.start+1+len(root.raw_name):root.close_start] + b'</' + new_name + b'>' + payload[root.end:]
+        old_value = cell.child('is',S) or cell.child('v',S)
+        require(old_value is not None, 'CHECKBOX_MAPPING', '方框文字存储无效')
+        book.package.patch(sheet['part'], [Edit(old_value.start,old_value.end,payload,'control:text_checkbox',rect.address),
+                                           Edit(cell.start,cell.open_end,set_attribute(doc.data,cell,b't','inlineStr'),'control:text_checkbox',rect.address)])
 
 V = "urn:schemas-microsoft-com:vml"
 X = "urn:schemas-microsoft-com:office:excel"
