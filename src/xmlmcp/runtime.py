@@ -21,6 +21,8 @@ def capabilities() -> dict:
         except OSError:
             reason = "未检测到注册的 Microsoft Excel 桌面版；仅安装 WPS 不能提供当前计算后端"
     return {"platform": sys.platform, "core_xml_available": True,
+            "report_generation_available": importlib.util.find_spec("matplotlib") is not None,
+            "report_generation_backend": "python_xml", "report_requires_excel": False,
             "calculation_available": reason is None, "image_mutation_available": reason is None,
             "calculation_backend": "windows_excel" if reason is None else None, "limitation": reason}
 

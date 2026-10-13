@@ -6,6 +6,9 @@ attrs==26.1.0
 cffi==2.1.1
 click==8.5.0
 colorama==0.4.6
+contourpy==1.4.0
+cycler==0.12.1
+fonttools==4.66.1
 cryptography==50.0.2; sys_platform != "darwin" or platform_machine != "x86_64"
 cryptography==48.0.1; sys_platform == "darwin" and platform_machine == "x86_64"
 h11==0.16.0
@@ -15,21 +18,27 @@ idna==3.20
 iniconfig==2.3.1
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
+kiwisolver==1.5.1
+matplotlib==3.11.2
 mcp==2.2.0
 mcp-types==2.2.0
+numpy==2.5.4
 opentelemetry-api==1.45.1
 packaging==26.3
 pillow==12.3.0
 pluggy==1.6.0
 pycparser==3.11
+pyparsing==3.3.3
 pydantic==2.13.5
 pydantic_core==2.46.5
 pytest==9.1.1
 python-multipart==0.0.32
+python-dateutil==2.9.0.post0
 pywin32==312; sys_platform == "win32"
 referencing==0.37.0
 rpds-py==2026.9.1
 sse-starlette==3.5.0
+six==1.17.0
 starlette==1.7.0
 truststore==0.10.4
 typing-inspection==0.4.4

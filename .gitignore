@@ -8,11 +8,10 @@ dist/
 test-artifacts/
 mcp.local.json
 examples/operations.local.json
-
-
 outputs/
 publish/
 doubao.mcp.json
 examples/result.xlsx
 examples/result.integrity.json
 examples/apply-result.json
+

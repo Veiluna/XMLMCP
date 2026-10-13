@@ -13,7 +13,7 @@ def test_in_memory_protocol_tools_and_errors(template, mode):
     async def run():
         async with Client(server, mode=mode) as client:
             listing = await client.list_tools()
-            assert {t.name for t in listing.tools} == {"inspect_template", "apply_changes", "verify_integrity"}
+            assert {t.name for t in listing.tools} == {"inspect_template", "apply_changes", "verify_integrity", "inspect_report_inputs", "generate_report"}
             assert all(t.output_schema for t in listing.tools)
             result = await client.call_tool("inspect_template", {"path": str(template)})
             assert not result.is_error and result.structured_content["fingerprint"]
@@ -32,7 +32,7 @@ def test_real_stdio_process(template, mode):
         params = StdioServerParameters(command=sys.executable, args=["-m", "xmlmcp"])
         async with Client(params, mode=mode, read_timeout_seconds=30) as client:
             listing = await client.list_tools()
-            assert len(listing.tools) == 3
+            assert len(listing.tools) == 5
             output = str(template.with_name("stdio-result.xlsx"))
             result = await client.call_tool("apply_changes", {"input_path": str(template), "output_path": output,
                                              "operations": [{"op": "write", "target": {"name": "SmallFont"}, "value": "stdio English"}]})

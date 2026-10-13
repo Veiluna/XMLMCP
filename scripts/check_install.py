@@ -32,7 +32,7 @@ async def check(root: Path) -> dict:
             parameters = StdioServerParameters(command=sys.executable, args=["-m", "xmlmcp"])
             async with Client(parameters, mode=mode, read_timeout_seconds=30) as client:
                 listing = await client.list_tools()
-                assert {t.name for t in listing.tools} == {"inspect_template", "apply_changes", "verify_integrity"}
+                assert {"inspect_template", "apply_changes", "verify_integrity", "inspect_report_inputs", "generate_report"} == {t.name for t in listing.tools}
                 inspected = await client.call_tool("inspect_template", {"path": str(template)})
                 assert not inspected.is_error, inspected.content
                 applied = await client.call_tool("apply_changes", {"input_path": str(template), "output_path": str(output), "operations": operations})
@@ -49,7 +49,8 @@ async def check(root: Path) -> dict:
                 cells = workbook.cell_map(workbook.sheets[0])
                 assert workbook.value(cells["A1"]) == "XMLMCP core example"
                 assert workbook.value(cells["C5"]) == 100 and workbook.value(cells["C6"]) == 200
-                checks.append({"protocol": client.protocol_version, "three_tools_passed": True,
+                checks.append({"protocol": client.protocol_version, "core_tools_passed": True,
+                               "listed_tools": [t.name for t in listing.tools],
                                "changed_parts": changed, "integrity": True})
     return {"version": __version__, "runtime": capabilities(), "checks": checks, "core_smoke": "passed"}
 

@@ -20,7 +20,7 @@ def release_files(root: Path) -> list[Path]:
                                 ("tests", {".py"}), ("docs", {".md"})):
         files += [p for p in (root / directory).rglob("*")
                   if p.is_file() and p.suffix in suffixes and "__pycache__" not in p.parts]
-    for name in ("portable-install.json", "portable-unit-tests.xml", "mac-arm64-deps.json", "mac-x86_64-deps.json"):
+    for name in ("portable-install.json", "portable-unit-tests.xml", "mac-arm64-deps.json", "mac-x86_64-deps.json", "report-v0.2.0.json"):
         path = root / "validation" / name
         if path.is_file():
             files.append(path)

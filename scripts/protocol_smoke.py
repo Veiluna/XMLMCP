@@ -28,7 +28,7 @@ async def run():
             assert not result.is_error, result.content
             entry = {"mode": mode, "protocol": client.protocol_version,
                      "tools": [t.name for t in listing.tools], "fingerprint": result.structured_content["fingerprint"]}
-            assert set(entry["tools"]) == {"inspect_template", "apply_changes", "verify_integrity"}
+            assert set(entry["tools"]) == {"inspect_template", "apply_changes", "verify_integrity", "inspect_report_inputs", "generate_report"}
             assert result.content and result.structured_content
             if directory:
                 generated = await client.call_tool("apply_changes", {

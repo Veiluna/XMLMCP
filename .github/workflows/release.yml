@@ -10,7 +10,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  platform-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            python: .venv/Scripts/python.exe
+          - os: macos-latest
+            python: .venv/bin/python
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install and check stdio from pinned dependencies
+        run: python scripts/setup.py
+      - name: Run tests without Office
+        run: ${{ matrix.python }} -m pytest -q --basetemp=.tmp/github-platform-unit
+
   release:
+    needs: platform-test
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -19,26 +42,28 @@ jobs:
       GH_REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@v6
-      - name: Confirm Python and install from the lock
-        run: |
-          python3 --version
-          python3 scripts/setup.py
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install and check stdio from the lock
+        run: python scripts/setup.py
       - name: Run regression tests
         run: .venv/bin/python -m pytest -q --basetemp=.tmp/github-unit --junitxml=validation/portable-unit-tests.xml
       - name: Build the portable package
         run: .venv/bin/python scripts/build_portable.py
-      - name: Publish v0.1.1 with verified assets
+      - name: Publish the tested version with verified assets
         run: |
-          if gh release view v0.1.1 >/dev/null 2>&1; then
-            echo "v0.1.1 already exists; preserving the published assets."
+          version=$(.venv/bin/python -c 'import xmlmcp; print(xmlmcp.__version__)')
+          tag="v$version"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "$tag already exists; preserving the published assets."
             exit 0
           fi
-          gh release create v0.1.1 \
+          gh release create "$tag" \
             --target "$GITHUB_SHA" \
-            --title "XMLMCP v0.1.1 - Windows / Mac portable installation" \
-            --notes-file docs/release-v0.1.1.md \
+            --title "XMLMCP $tag - Report generation for Windows / Mac WPS" \
+            --notes-file "docs/release-$tag.md" \
             --draft \
-            "dist/XMLMCP-0.1.1-portable.zip" \
-            "dist/XMLMCP-0.1.1-portable.zip.sha256"
-          gh release edit v0.1.1 --draft=false --latest
-
+            "dist/XMLMCP-$version-portable.zip" \
+            "dist/XMLMCP-$version-portable.zip.sha256"
+          gh release edit "$tag" --draft=false --latest

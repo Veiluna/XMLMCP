@@ -1,26 +1,29 @@
 # 在其他电脑安装 XMLMCP
 
-适用版本：0.1.1。本地 stdio MCP；Windows 和 macOS 使用同一份源码包，安装脚本在目标电脑创建虚拟环境，并生成该电脑的 `command/args` 配置。
+适用版本：0.2.0。本地 stdio MCP；Windows 和 macOS 使用同一份源码包，安装脚本在目标电脑创建虚拟环境，并生成该电脑的 `command/args` 配置。
 
 ## 支持范围
 
 | 功能 | Windows | MacBook：Apple 芯片 / Intel |
 | --- | --- | --- |
-| 安装、启动、三个 MCP 工具 | 支持 | 支持；仍待 Mac 真机复测 |
+| 安装、启动、五个 MCP 工具 | 支持 | 支持；仍待 Mac 真机复测 |
+| 委托单 + CSV ZIP + 已确认映射生成报告、统计表和图片 | 支持，无需 Excel | 支持，无需 Excel，可用 WPS 查看 |
 | 检查工作表、命名区域、样式及现有对象 | 支持，无需 Excel | 支持，无需 Excel |
 | 无需重算的文字、数值、布尔、矩阵、清空、复制已有样式 | 支持，无需 Excel | 支持，无需 Excel |
 | 核验部件字节和修改片段 | 支持，无需 Excel | 支持，无需 Excel |
 | 公式计算、图表和透视缓存更新 | 需要 Microsoft Excel 桌面版 | 本版未提供 |
-| 添加 / 替换图片 | 需要 Microsoft Excel 桌面版 | 本版未提供 |
+| 通用 apply_changes 添加 / 替换图片 | 需要 Microsoft Excel 桌面版 | 本版未提供；报告工具可生成并插入图片 |
 | 原有图片、批注、VML、控件等未修改部件的保留 | 支持 | 支持 |
 
-**“无需重算”目前按整个工作簿判断：** 工作簿只要含有公式、图表、透视表或 chartEx，写入和样式修改就会进入计算流程，即使修改的是其他单元格。此类操作在 Mac 上会返回 `EXCEL_REQUIRED` 或具体的不支持原因，并取消整批，不发布文件。Mac 上添加普通公式也会被拒绝。安装 Excel for Mac 或 WPS 不会启用本版的 Windows Excel 后端。`inspect_template` 的 `capabilities.runtime` 给出实际平台能力；`calculation_supported` 仅表示模板结构是否被适配。
+**通用 `apply_changes` 按整个工作簿判断重算需求：** 工作簿只要含有公式、图表、透视表或 chartEx，写入和样式修改就会进入计算流程，即使修改的是其他单元格。此类操作在 Mac 上会返回 `EXCEL_REQUIRED` 或具体的不支持原因，并取消整批，不发布文件。Mac 上添加普通公式也会被拒绝。安装 Excel for Mac 或 WPS 不会启用本版的 Windows Excel 后端。`inspect_template` 的 `capabilities.runtime` 给出实际平台能力；`calculation_supported` 仅表示模板结构是否被适配。
+
+报告工具 `generate_report` 使用单独的离线路径，由 Python 计算原始测量值并画图。模板不可含公式或透视依赖；已验证独立的外部图表快照可原字节保留。它可以在 Mac 上添加报告图片，具体限制见 [报告生成说明](docs/report-workflow.md)。
 
 安装自检使用 `examples/core-template.xlsx`：它含已有图片、文字框、批注、复选框和 VML，没有公式、图表或透视表。其数值是静态示例，不是自动计算结果。
 
 ## 准备
 
-1. 把 `XMLMCP-0.1.1-portable.zip` 复制到目标电脑并解压。进入解压后的 **XMLMCP** 文件夹，应能看到 `pyproject.toml`、`src` 和 `scripts`。
+1. 从 [GitHub Releases](https://github.com/Veiluna/XMLMCP/releases) 下载 `XMLMCP-0.2.0-portable.zip` 并解压。进入解压后的 **XMLMCP** 文件夹，应能看到 `pyproject.toml`、`src` 和 `scripts`。
 2. 安装 [Python 3.12 或更高版本](https://www.python.org/downloads/)。本机已验证 Python 3.14.7；Mac 依赖预检使用 Python 3.12。Windows 安装时让 Python 命令可用；Mac 使用对应 Apple 芯片或 Intel 的官方安装包。
 3. 首次安装需要网络下载固定版本依赖。检查和无需重算的修改不要求安装 Office。
 
@@ -75,7 +78,7 @@ Apple 芯片和 Intel 均从源码安装；依赖由 pip 选择对应架构，In
 
 `command` 的值填写真实路径，无需在 JSON 字符串里面再套引号。Mac 的 `command` 必须保留虚拟环境内的路径，不能改成该软链接指向的系统 Python。
 
-客户端应列出 `inspect_template`、`apply_changes`、`verify_integrity` 三个工具。第一次先检查 `examples/core-template.xlsx`，再使用 `examples/core-operations.json` 的操作生成一个新的输出。MCP 文件参数必须使用该电脑的绝对路径；输出目录须已存在，输出文件和报告须不存在。
+客户端应列出 `inspect_template`、`apply_changes`、`verify_integrity`、`inspect_report_inputs`、`generate_report` 五个工具。第一次先使用核心示例确认连接。报告流程和新模板的映射配置见 [报告生成说明](docs/report-workflow.md)。MCP 文件参数使用目标电脑绝对路径；报告工具创建整个新目录，通用修改工具创建新文件。
 
 直接执行 `python -m xmlmcp` 后等待 stdin 是正常的 stdio 服务行为；诊断用的 `inspect/apply/verify` 参数不填进 MCP 的 args。配置不依赖客户端工作目录。[官方 SDK 接入说明](https://github.com/modelcontextprotocol/python-sdk/blob/main/docs/get-started/real-host.md)
 

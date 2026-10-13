@@ -93,7 +93,7 @@ def verify_packages(source: Package, output: Package, report: dict) -> Integrity
                 require(isinstance(start, int) and isinstance(end, int) and 0 <= start <= end <= len(expected[part]),
                         "PATCH_RANGE", "报告中的补丁越界")
                 require(digest(expected[part][start:end]) == patch["old_sha256"], "PATCH_SOURCE", "补丁原始片段不一致", part=part)
-                require(patch["reason"].split(":")[0] in ("cell", "image", "chart", "pivot", "calculation"),
+                require(patch["reason"].split(":")[0] in ("cell", "image", "chart", "pivot", "calculation", "control"),
                         "PATCH_REASON", "报告含未识别的修改类别")
                 payload = base64.b64decode(patch["replacement_base64"], validate=True)
                 edits.append(Edit(start, end, payload, patch["reason"], patch["selector"]))

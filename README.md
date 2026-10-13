@@ -1,12 +1,18 @@
 # XMLMCP
 
-[下载最新安装包](https://github.com/Veiluna/XMLMCP/releases/latest) · [v0.1.1 安装包直接下载](https://github.com/Veiluna/XMLMCP/releases/download/v0.1.1/XMLMCP-0.1.1-portable.zip) · [中文安装说明](INSTALL.md)
+本机 XLSX 模板注入 MCP。最终文件从原始 ZIP 包生成；未修改部件的解压字节不变，修改部件使用可重放的字节补丁。0.2.0 新增“委托单 Excel + 仪器原始数据 ZIP + 报告模板”生成流程，Windows 和只有 WPS 的 MacBook 均无需 Microsoft Excel。通用公式/透视计算仍使用 Windows Excel 临时副本。
 
-本机 XLSX 模板注入 MCP。最终文件从原始 ZIP 包生成；未修改部件的解压字节不变，修改部件使用可重放的字节补丁。Excel 仅处理临时副本以计算公式、提供图片几何尺寸和更新缓存。
+版本下载：[v0.2.0 安装包](https://github.com/Veiluna/XMLMCP/releases/download/v0.2.0/XMLMCP-0.2.0-portable.zip) · [GitHub Releases](https://github.com/Veiluna/XMLMCP/releases)。
+
+## 生成检测报告
+
+先调用 `inspect_report_inputs` 检查字段、单位、样品对应和模板映射建议，首次确认后调用 `generate_report`。同一模板复用映射；更换模板时重新配置字段、样品表、统计表和图片区域。首版适配极片电阻仪单点/变压 CSV ZIP，其他检测项目需增加数据适配器。
+
+输出含 XLSX 报告、散点图和变压曲线 PNG、精确补丁完整性报告、来源/统计 JSON、待补字段及可复用映射。Python 计算并生成静态图片，WPS 直接显示已填结果；源数据变化后重新生成。详见 [报告生成说明](docs/report-workflow.md)。
 
 ## 安装与启动
 
-Windows / macOS，Python 3.12+。检查、完整性验证和无需重算的 XML 修改不需要 Office；计算缓存和图片修改需要 Windows Microsoft Excel。跨电脑安装步骤见 [INSTALL.md](INSTALL.md)。
+Windows / macOS，Python 3.12+。报告生成、检查、完整性验证和无需重算的 XML 修改不需要 Office；通用 `apply_changes` 的计算缓存和图片修改需要 Windows Microsoft Excel。安装步骤见 [INSTALL.md](INSTALL.md)。
 
 ```powershell
 cd "你的解压目录\XMLMCP"
@@ -22,7 +28,7 @@ bash scripts/setup.sh
 
 安装脚本使用 `requirements.lock` 的固定依赖版本。本项目锁定官方 Python SDK `mcp==2.2.0`，以 SDK 的 `MCPServer` 实现协议接入。日志写入 stderr，stdio 的 stdout 只承载协议。
 
-安装成功会自动生成当前电脑的 **mcp.local.json**。在客户端的本机 MCP 配置入口导入该 JSON；若入口分别填写字段，复制其中 command/args。配置格式如下，command 使用安装脚本生成的真实绝对路径：
+安装成功会自动生成当前电脑的 **mcp.local.json**。在客户端的本机 MCP 配置入口导入该 JSON；若入口分别填写字段，复制其中 command/args。以下为格式示例，command 使用安装脚本生成的真实绝对路径：
 
 ```json
 {
@@ -33,11 +39,13 @@ bash scripts/setup.sh
 
 不依赖客户端工作目录。终端直接启动后等待 stdin 是正常行为。其他电脑使用发行 ZIP 重新安装，不复制 `.venv`；新目录安装后使用新配置。飞书文档中的企业 HTTP 接入与本项目的本机 stdio 接入分开配置。
 
-## 三个工具
+## 五个工具
 
 - `inspect_template(path, targets=[])`：查看指纹、名称作用域、目标值和样式、图片 ID、图表来源及支持情况。
 - `apply_changes(input_path, output_path, operations)`：整批预检、修改、计算、验证，成功后发布新文件及 `.integrity.json` 报告。
 - `verify_integrity(input_path, output_path, report_path)`：只读重放报告中的补丁，核验逐部件哈希、片段外字节和包内引用。报告是修改记录，不是第三方签名证明。
+- `inspect_report_inputs(template_path, order_path, raw_zip_path, profile_path?, metadata?)`：只读检查样品和字段、独立计算统计，返回映射建议和待补信息。
+- `generate_report(template_path, order_path, raw_zip_path, output_directory, profile_path?, metadata?, profile?)`：无需 Excel 生成报告；内联 `profile` 与文件 `profile_path` 二选一，输出目录必须为不存在的新目录。
 
 所有文件路径必须是绝对路径。输入不会覆盖；输出文件和报告必须尚不存在。每次调用完整指定输入及目标。
 
@@ -78,7 +86,7 @@ MCP 调用参数与这些 CLI 参数对应；CLI 仅用于诊断，豆包配置�
 
 支持未加密、未签名的 Transitional `.xlsx`；不插删或移动行列，不创建任意样式。文本用 inlineStr，保留已有 s 和一致的富文本字符格式。混合富文本和拼音/语音标注拒绝整格覆盖。只存于字符运行中的字体不能在数值、公式或清空操作中可靠保留，此类类型转换也会拒绝。
 
-Mac 首版支持检查及无需重算的 XML 修改。当前以工作簿为计算单位：任何已有公式、图表或透视表都会使单元格修改进入 Windows Excel 流程；Mac 上这类修改及图片添加/替换明确报错并取消整批。现有对象在无需修改时仍原字节保留。检查结果的 `capabilities.runtime` 报告平台能力。
+Mac 支持检查、无需重算的 XML 修改及 `generate_report` 的 Python 计算、画图和 XML 注入。通用 `apply_changes` 仍以整个工作簿为计算单位，要求 Windows Excel 后端。报告工具使用严格的离线路径：无工作簿公式/透视表，原有图表只能是可证明与新数据无关的静态文字或外部单元格快照；本地、动态或未知来源会拒绝。`capabilities.runtime` 报告实际平台能力。
 
 共享、数组和数据表公式区域不能直接写入；已有固定数组的依赖数据可改，缓存逐格回填，结果范围必须固定。新增公式必须能作为普通公式计算并保持表达式语义，Excel 改写为未适配函数/数组、产生新错误或无法映射时整批失败。
 
@@ -90,16 +98,15 @@ Mac 首版支持检查及无需重算的 XML 修改。当前以工作簿为计�
 
 ## 验证
 
-当前结果见 [VALIDATION.md](VALIDATION.md)。0.1.0 的 35 个自动测试及原始 Office 记录保存在本工作区 validation/acceptance.json；0.1.1 的跨平台安装与回归证据另存 validation/portable-install.json。官方客户端通过 2025-11-25 和 2026-07-28 两个协议路径实际调用三个工具。原生 Office 构造模板的普通、动态名称、透视和外部快照图表通过 Excel/WPS 首次打开的数据与对象检查，图表导出图片已核验。
+当前结果见 [VALIDATION.md](VALIDATION.md)。报告测试覆盖独立统计、编码/NUL 处理、不同模板映射、来源不变、容量/样品/依赖失败取消，以及两种协议的新工具真实调用。原有 Excel 计算验收记录按版本保留。
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -q --basetemp=.tmp\unit-portable --junitxml=validation\portable-unit-tests.xml
+.\.venv\Scripts\python.exe -m pytest -q --basetemp=test-artifacts\unit-portable --junitxml=validation\portable-unit-tests.xml
 .\.venv\Scripts\python.exe scripts\check_install.py
 .\.venv\Scripts\python.exe scripts\protocol_smoke.py examples\template.xlsx --apply
 .\.venv\Scripts\python.exe scripts\office_smoke.py --kind all --wps
 ```
 
-Mac 用 `.venv/bin/python` 运行 pytest 或 check_install.py；Office 脚本仅供 Windows 使用。各次 Office 验收会建立独立目录，并只关闭本次创建的实例。Mac 真机、客户端人工提示检查与真实业务原模板验收尚待完成。当前工具无法控制豆包工作的原生设置界面，真实豆包连接尚未代替 SDK 验收，需要在其界面导入本机配置后确认三个工具可见。
+Mac 用 `.venv/bin/python` 运行 pytest 或 check_install.py；Office 脚本仅供 Windows。用户提供模板的报告已通过字节检查和 Windows WPS 首次打开核对；Mac 真机及人工提示检查仍待复测。SDK 测试不代替豆包实测，导入本机配置后确认五个工具可见。
 
 文档依据：[飞书 MCP 使用](https://aily.feishu.cn/hc/1u7kleqg/73ahi33a)、[官方 SDK](https://github.com/modelcontextprotocol/python-sdk)、[MCP 开发文档](https://modelcontextprotocol.io/docs/2026-07-28/develop/build-server)。字符串转义依据 [Microsoft ST_Xstring 说明](https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oe376/bd0aa042-434a-4ca7-b25f-4e1fd25a954d)。实现结构见 [docs/architecture.md](docs/architecture.md)。
-

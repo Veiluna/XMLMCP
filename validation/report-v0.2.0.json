@@ -1,0 +1,117 @@
+{
+  "version": "0.2.0",
+  "recorded_at": "2026-10-13T02:42:18.651278+00:00",
+  "unit_tests": {
+    "passed": 63,
+    "failed": 0,
+    "report": "validation/portable-unit-tests.xml"
+  },
+  "local_stdio": {
+    "version": "0.2.0",
+    "runtime": {
+      "platform": "win32",
+      "core_xml_available": true,
+      "report_generation_available": true,
+      "report_generation_backend": "python_xml",
+      "report_requires_excel": false,
+      "calculation_available": true,
+      "image_mutation_available": true,
+      "calculation_backend": "windows_excel",
+      "limitation": null
+    },
+    "checks": [
+      {
+        "protocol": "2025-11-25",
+        "core_tools_passed": true,
+        "listed_tools": [
+          "inspect_template",
+          "apply_changes",
+          "verify_integrity",
+          "inspect_report_inputs",
+          "generate_report"
+        ],
+        "changed_parts": [
+          "xl/worksheets/sheet1.xml"
+        ],
+        "integrity": true
+      },
+      {
+        "protocol": "2026-07-28",
+        "core_tools_passed": true,
+        "listed_tools": [
+          "inspect_template",
+          "apply_changes",
+          "verify_integrity",
+          "inspect_report_inputs",
+          "generate_report"
+        ],
+        "changed_parts": [
+          "xl/worksheets/sheet1.xml"
+        ],
+        "integrity": true
+      }
+    ],
+    "core_smoke": "passed"
+  },
+  "mac_dependency_checks": [
+    {
+      "architecture": "arm64",
+      "python": "3.12",
+      "packages": 44,
+      "active_dependency_constraints_checked": 63,
+      "pywin32_excluded": true,
+      "cryptography": "50.0.2",
+      "marker_constraints": "passed",
+      "wheel_availability": "passed",
+      "real_mac_installation": "not_run"
+    },
+    {
+      "architecture": "x86_64",
+      "python": "3.12",
+      "packages": 44,
+      "active_dependency_constraints_checked": 63,
+      "pywin32_excluded": true,
+      "cryptography": "48.0.1",
+      "marker_constraints": "passed",
+      "wheel_availability": "passed",
+      "real_mac_installation": "not_run"
+    }
+  ],
+  "user_template_validation": {
+    "original_parts": 46,
+    "unchanged_parts": 40,
+    "changed_parts": 6,
+    "added_media_parts": 2,
+    "removed_parts": 0,
+    "precise_patch_replay": "passed",
+    "retained_original_images": 12,
+    "checkboxes": 12,
+    "comments": 31,
+    "reference_charts": 3,
+    "missing_field_count": 4,
+    "source_fingerprints_unchanged": true,
+    "wps_windows": {
+      "version": "12.0",
+      "first_open_values_passed": true,
+      "charts": 3,
+      "checkboxes": 12,
+      "new_images": 2,
+      "readonly": true,
+      "file_unchanged": true
+    },
+    "wps_pdf_pages_visually_checked": 2,
+    "windows_excel_report_check": "automation_startup_failed",
+    "mac_wps": "not_run",
+    "human_repair_dialog_check": "not_run"
+  },
+  "private_business_inputs_and_outputs": "not included in the release",
+  "fresh_windows_installation": {
+    "version": "0.2.0",
+    "fresh_windows_install": "passed",
+    "unicode_and_spaces_path": true,
+    "venv_not_copied": true,
+    "pip_check": "passed",
+    "two_protocol_core_smoke": "passed",
+    "tools_listed": 5
+  }
+}

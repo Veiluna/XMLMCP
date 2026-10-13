@@ -80,7 +80,8 @@ def _publish_noclobber(source: Path, destination: Path):
         source.unlink()
 
 
-def apply_changes(input_path: str, output_path: str, operations: list[Operation | dict], *, calculator=None) -> ApplyResult:
+def apply_changes(input_path: str, output_path: str, operations: list[Operation | dict], *, calculator=None,
+                  offline: bool = False, digit_width: float = 7, checkbox_values=None, text_run_values=None, provenance=None) -> ApplyResult:
     ops = OPERATIONS.validate_python(operations)
     require(ops, "NO_OPERATIONS", "操作列表不能为空")
     package = Package(input_path)
@@ -100,19 +101,35 @@ def apply_changes(input_path: str, output_path: str, operations: list[Operation 
     has_formulas = any(cell.child("f", S) for sheet in book.sheets if sheet["kind"] == "worksheet" for cell in book.cell_map(sheet).values())
     has_new_formulas = any(c.formula is not None for cells in changes.values() for c in cells.values())
     calculate = bool(changes) and bool(has_formulas or has_new_formulas or book.charts() or book.pivots() or book.unsupported_chart_parts())
+    if offline:
+        from .offline import preflight_offline
+        preflight_offline(book)
+        require(not has_new_formulas, "OFFLINE_FORMULA", "离线报告不接受新公式")
+        calculate = False
     preflight_calculation(book, calculate)
-    if calculator is None and (calculate or images):
+    if calculator is None and (calculate or images) and not offline:
         require_excel_backend()
     apply_cell_changes(book, changes)
+    if text_run_values:
+        from .report_richtext import apply_text_run_values
+        apply_text_run_values(book, text_run_values)
     # Check newly submitted formulas too before any Excel process starts.
     preflight_calculation(book, calculate)
+    if checkbox_values:
+        from .controls import apply_checkbox_values
+        apply_checkbox_values(book, checkbox_values)
     calculation = {"calculated": False, "engine": None, "external_refresh": False,
                    "reason": "No dependent formulas/charts/pivots were changed"}
     owned_output = owned_report = False
     try:
         with tempfile.TemporaryDirectory(prefix=".xmlmcp-", dir=output.parent) as temporary:
             directory = Path(temporary)
-            if calculate or images:
+            if offline:
+                from .offline import image_geometry
+                geometry = image_geometry(book, images, digit_width)
+                apply_image_changes(book, images, geometry)
+                calculation.update({"engine": "python_report_xml", "reason": "No workbook formulas or local chart/pivot dependencies; external reference snapshots retained", "geometry": geometry})
+            elif calculate or images:
                 calculation, computed_package = (calculator or ExcelCalculator()).run(book, directory, calculate, images)
                 if calculate:
                     require(computed_package, "CALCULATION_RESULT", "计算引擎没有返回缓存副本")
@@ -141,6 +158,8 @@ def apply_changes(input_path: str, output_path: str, operations: list[Operation 
             report.update({"output_fingerprint": digest(staging.read_bytes()), "output_path": str(output),
                            "operations": [op.model_dump(mode="json", exclude_none=True) for op in ops],
                            "calculation": calculation})
+            if provenance:
+                report["provenance"] = provenance
             original = Package(package.path)
             result = Package(staging)
             integrity = verify_packages(original, result, report)

@@ -1,7 +1,6 @@
 {
   "version": "1",
   "pip_version": "26.2.1",
-  "note": "Relevant fields excerpted from the pip target-wheel report; full local report retained in the development workspace",
   "environment": {
     "implementation_name": "cpython",
     "implementation_version": "3.14.7",
@@ -15,6 +14,13 @@
     "python_version": "3.14",
     "sys_platform": "win32"
   },
+  "target": {
+    "system": "Darwin",
+    "architecture": "x86_64",
+    "python": "3.12",
+    "platform_tag": "macosx_12_0_x86_64"
+  },
+  "note": "Target-wheel availability only; environment describes the Windows host, not a real Mac installation.",
   "install": [
     {
       "download_info": {
@@ -158,6 +164,116 @@
         "name": "colorama",
         "version": "0.4.6",
         "requires_python": "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/97/ba/01bde9753bdbba04a6da9d2bff3881f021bc708f654655e95fae26d3b3a3/contourpy-1.4.0-cp312-cp312-macosx_10_13_x86_64.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "186ba929df36d61b6127da2e89cd1357e4cb79aca647381ab1a6feb0b152877b"
+          },
+          "hash": "sha256=186ba929df36d61b6127da2e89cd1357e4cb79aca647381ab1a6feb0b152877b"
+        }
+      },
+      "metadata": {
+        "name": "contourpy",
+        "version": "1.4.0",
+        "requires_python": ">=3.12",
+        "requires_dist": [
+          "numpy>=2.0",
+          "myst-parser; extra == \"docs\"",
+          "sphinx; extra == \"docs\"",
+          "sphinx-book-theme; extra == \"docs\"",
+          "sphinx-copybutton; extra == \"docs\"",
+          "bokeh; extra == \"bokeh\"",
+          "selenium; extra == \"bokeh\"",
+          "contourpy[bokeh,docs]; extra == \"mypy\"",
+          "bokeh; extra == \"mypy\"",
+          "docutils-stubs; extra == \"mypy\"",
+          "mypy==2.1.0; extra == \"mypy\"",
+          "types-Pillow; extra == \"mypy\"",
+          "contourpy[test-no-images]; extra == \"test\"",
+          "matplotlib; extra == \"test\"",
+          "pre-commit; extra == \"test\"",
+          "Pillow; extra == \"test\"",
+          "pytest; extra == \"test-no-images\"",
+          "pytest-cov; extra == \"test-no-images\"",
+          "pytest-rerunfailures<16; extra == \"test-no-images\"",
+          "pytest-xdist; extra == \"test-no-images\"",
+          "wurlitzer; extra == \"test-no-images\""
+        ]
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/e7/05/c19819d5e3d95294a6f5947fb9b9629efb316b96de511b418c53d245aae6/cycler-0.12.1-py3-none-any.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30"
+          },
+          "hash": "sha256=85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30"
+        }
+      },
+      "metadata": {
+        "name": "cycler",
+        "version": "0.12.1",
+        "requires_python": ">=3.8",
+        "requires_dist": [
+          "ipython ; extra == 'docs'",
+          "matplotlib ; extra == 'docs'",
+          "numpydoc ; extra == 'docs'",
+          "sphinx ; extra == 'docs'",
+          "pytest ; extra == 'tests'",
+          "pytest-cov ; extra == 'tests'",
+          "pytest-xdist ; extra == 'tests'"
+        ]
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/7f/0d/f51141407f9a64efc9fb39b94b0194c4a99c1ffff50834e7ca7a3f1cdd53/fonttools-4.66.1-cp312-cp312-macosx_10_13_x86_64.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "6946fe7bfb28590a1fd4061a17609c9a843952deb65dcf30d1fe725070c3e7a4"
+          },
+          "hash": "sha256=6946fe7bfb28590a1fd4061a17609c9a843952deb65dcf30d1fe725070c3e7a4"
+        }
+      },
+      "metadata": {
+        "name": "fonttools",
+        "version": "4.66.1",
+        "requires_python": ">=3.11",
+        "requires_dist": [
+          "lxml>=4.0; extra == \"lxml\"",
+          "brotli>=1.0.1; platform_python_implementation == \"CPython\" and extra == \"woff\"",
+          "brotlicffi>=0.8.0; platform_python_implementation != \"CPython\" and extra == \"woff\"",
+          "zopfli>=0.1.4; extra == \"woff\"",
+          "unicodedata2>=18.0.0; python_version <= \"3.15\" and extra == \"unicode\"",
+          "lz4>=1.7.4.2; extra == \"graphite\"",
+          "scipy; platform_python_implementation != \"PyPy\" and extra == \"interpolatable\"",
+          "munkres; platform_python_implementation == \"PyPy\" and extra == \"interpolatable\"",
+          "pycairo; extra == \"interpolatable\"",
+          "matplotlib; extra == \"plot\"",
+          "sympy; extra == \"symfont\"",
+          "xattr; sys_platform == \"darwin\" and extra == \"type1\"",
+          "skia-pathops>=0.5.0; extra == \"pathops\"",
+          "uharfbuzz>=0.45.0; extra == \"repacker\"",
+          "lxml>=4.0; extra == \"all\"",
+          "brotli>=1.0.1; platform_python_implementation == \"CPython\" and extra == \"all\"",
+          "brotlicffi>=0.8.0; platform_python_implementation != \"CPython\" and extra == \"all\"",
+          "zopfli>=0.1.4; extra == \"all\"",
+          "unicodedata2>=18.0.0; python_version <= \"3.15\" and extra == \"all\"",
+          "lz4>=1.7.4.2; extra == \"all\"",
+          "scipy; platform_python_implementation != \"PyPy\" and extra == \"all\"",
+          "munkres; platform_python_implementation == \"PyPy\" and extra == \"all\"",
+          "pycairo; extra == \"all\"",
+          "matplotlib; extra == \"all\"",
+          "sympy; extra == \"all\"",
+          "xattr; sys_platform == \"darwin\" and extra == \"all\"",
+          "skia-pathops>=0.5.0; extra == \"all\"",
+          "uharfbuzz>=0.45.0; extra == \"all\""
+        ]
       }
     },
     {
@@ -354,6 +470,49 @@
     },
     {
       "download_info": {
+        "url": "https://files.pythonhosted.org/packages/71/74/c21f339956f6f691b2ed7e31d5f3ae767304df6c460192739fc830853051/kiwisolver-1.5.1-cp312-cp312-macosx_10_13_x86_64.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "0ebdef3eae5336568147c39a55be6a2036ffde53faa9ca2d978989ae7c2da12c"
+          },
+          "hash": "sha256=0ebdef3eae5336568147c39a55be6a2036ffde53faa9ca2d978989ae7c2da12c"
+        }
+      },
+      "metadata": {
+        "name": "kiwisolver",
+        "version": "1.5.1",
+        "requires_python": ">=3.10"
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/cb/ce/1bfcc4873b121597791ad74032943b123218c0613af0b97e8dd05e916fb1/matplotlib-3.11.2-cp312-cp312-macosx_10_13_x86_64.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "ef752769cd962f39ea0b6ffc82d1ea43a0012c5a6157c7a075212fa509cfcff2"
+          },
+          "hash": "sha256=ef752769cd962f39ea0b6ffc82d1ea43a0012c5a6157c7a075212fa509cfcff2"
+        }
+      },
+      "metadata": {
+        "name": "matplotlib",
+        "version": "3.11.2",
+        "requires_python": ">=3.11",
+        "requires_dist": [
+          "contourpy>=1.0.1",
+          "cycler>=0.10",
+          "fonttools>=4.28.2",
+          "kiwisolver>=1.3.1",
+          "numpy>=1.25",
+          "packaging>=20.0",
+          "pillow>=9",
+          "pyparsing>=3",
+          "python-dateutil>=2.7"
+        ]
+      }
+    },
+    {
+      "download_info": {
         "url": "https://files.pythonhosted.org/packages/1b/ff/8e7eade68b8a28f7da0ed1085544341b51f9c935dbf6b95c76b7edfea6a0/mcp-2.2.0-py3-none-any.whl",
         "archive_info": {
           "hashes": {
@@ -407,6 +566,22 @@
           "pydantic>=2.12.0",
           "typing-extensions>=4.13.0"
         ]
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/d0/97/ba2074e92b7befea137e77ea8471e768bbd87c339b7e8c9f5a931949f977/numpy-2.5.4-cp312-cp312-macosx_10_13_x86_64.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "c6342f54c67093cae5c0227eb0eb772fdb79f2a2c37a6eb278b9909ee06aa356"
+          },
+          "hash": "sha256=c6342f54c67093cae5c0227eb0eb772fdb79f2a2c37a6eb278b9909ee06aa356"
+        }
+      },
+      "metadata": {
+        "name": "numpy",
+        "version": "2.5.4",
+        "requires_python": ">=3.12"
       }
     },
     {
@@ -528,6 +703,26 @@
     },
     {
       "download_info": {
+        "url": "https://files.pythonhosted.org/packages/38/bb/d215ee7c73b61497b28a5503f9f53523f294fcc936762b7caf90e0c1c2b5/pyparsing-3.3.3-py3-none-any.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4"
+          },
+          "hash": "sha256=ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4"
+        }
+      },
+      "metadata": {
+        "name": "pyparsing",
+        "version": "3.3.3",
+        "requires_python": ">=3.9",
+        "requires_dist": [
+          "railroad-diagrams ; extra == \"diagrams\"",
+          "jinja2 ; extra == \"diagrams\""
+        ]
+      }
+    },
+    {
+      "download_info": {
         "url": "https://files.pythonhosted.org/packages/eb/47/c95ffc2009878c7aac0c5e08528022dcb885933252a88b5f170058014464/pydantic-2.13.5-py3-none-any.whl",
         "archive_info": {
           "hashes": {
@@ -619,6 +814,25 @@
     },
     {
       "download_info": {
+        "url": "https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
+          },
+          "hash": "sha256=a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
+        }
+      },
+      "metadata": {
+        "name": "python-dateutil",
+        "version": "2.9.0.post0",
+        "requires_python": "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7",
+        "requires_dist": [
+          "six >=1.5"
+        ]
+      }
+    },
+    {
+      "download_info": {
         "url": "https://files.pythonhosted.org/packages/2c/58/ca301544e1fa93ed4f80d724bf5b194f6e4b945841c5bfd555878eea9fcb/referencing-0.37.0-py3-none-any.whl",
         "archive_info": {
           "hashes": {
@@ -680,6 +894,22 @@
           "granian>=2.3.1; extra == \"granian\"",
           "daphne>=4.2.0; extra == \"daphne\""
         ]
+      }
+    },
+    {
+      "download_info": {
+        "url": "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl",
+        "archive_info": {
+          "hashes": {
+            "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"
+          },
+          "hash": "sha256=4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"
+        }
+      },
+      "metadata": {
+        "name": "six",
+        "version": "1.17.0",
+        "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
       }
     },
     {
